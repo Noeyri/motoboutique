@@ -77,7 +77,7 @@ El frontend todavía no tiene pruebas automatizadas (ver `PROGRESS.md`); `npm ru
 
 **Backend** (`backend/.env`, ver `backend/.env.example`): `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `DEMO_PASSWORD`, `CORS_ALLOWED_ORIGINS`, `RESEND_API_KEY`, `EMAIL_FROM`, `FRONTEND_URL` y `PASSWORD_RESET_TOKEN_TTL_MINUTES` (opcional, 30 por defecto). En producción también se configura `SESSION_COOKIE_SAME_SITE` cuando el frontend y la API están en sitios distintos.
 
-**Frontend** (`frontend/.env`, ver `frontend/.env.example`): `VITE_API_BASE_URL` (vacío en desarrollo) y `VITE_DEV_PROXY_TARGET`.
+**Frontend** (`frontend/.env`, ver `frontend/.env.example`): `VITE_API_BASE_URL` (vacío en desarrollo y en Render cuando se usa la regla proxy) y `VITE_DEV_PROXY_TARGET`.
 
 Los archivos `.env` no se suben a Git. Los `.env.example` no contienen credenciales reales.
 
@@ -142,19 +142,20 @@ En Render selecciona **New > Static Site**, elige el mismo repositorio y rama. E
 | Build Command | `npm ci && npm run build` |
 | Publish Directory | `dist` |
 
-En **Environment Variables**, agrega `VITE_API_BASE_URL` con la URL pública asignada al backend, por ejemplo `https://motoboutique-backend.onrender.com` (sin `/api` al final). No agregues `RESEND_API_KEY` ni contraseñas al frontend.
+No configures `VITE_API_BASE_URL`: el frontend usará rutas relativas `/api` y Render las reenviará al backend. Si ya existe esa variable en el servicio, elimínala antes de volver a desplegar. No agregues `RESEND_API_KEY` ni contraseñas al frontend.
 
-En **Redirects/Rewrites** agrega una regla para que funcionen las rutas de React:
+En **Redirects/Rewrites** agrega estas reglas en este orden. La primera hace que navegador y API compartan el dominio del frontend; la segunda permite las rutas de React:
 
 | Source | Destination | Action |
 |---|---|---|
+| `/api/*` | `https://motoboutique-backend.onrender.com/api/*` | `Rewrite` |
 | `/*` | `/index.html` | `Rewrite` |
 
-Luego crea el Static Site y copia su URL pública HTTPS.
+Reemplaza el destino por la URL pública real del backend si Render le asignó otra. Luego crea el Static Site y copia su URL pública HTTPS.
 
 #### 4. Completar los dominios y redesplegar
 
-En las variables del backend, configura `CORS_ALLOWED_ORIGINS` y `FRONTEND_URL` con la URL HTTPS exacta del frontend, sin `/` al final (por ejemplo, `https://motoboutique-frontend.onrender.com`). Guarda y redespliega el backend. Confirma también que `VITE_API_BASE_URL` en el frontend sea la URL exacta del backend y vuelve a desplegar el frontend si la cambiaste.
+En las variables del backend, configura `CORS_ALLOWED_ORIGINS` y `FRONTEND_URL` con la URL HTTPS exacta del frontend, sin `/` al final (por ejemplo, `https://motoboutique-frontend.onrender.com`). Guarda y redespliega el backend. Confirma que `VITE_API_BASE_URL` no esté configurada en el frontend y vuelve a desplegarlo después de agregar las reglas Rewrite.
 
 #### 5. Comprobar el despliegue
 
@@ -164,11 +165,11 @@ Para recuperación de contraseña, crea/verifica un remitente en Resend y config
 
 ### Opción B: usar el Blueprint
 
-En Render selecciona **New > Blueprint**, conecta el repositorio y acepta `render.yaml`. El Blueprint crea el backend y frontend. Completa las variables que Render solicite para el backend y el frontend con los mismos valores descritos arriba; cuando Render asigne las URLs, verifica `CORS_ALLOWED_ORIGINS`, `FRONTEND_URL` y `VITE_API_BASE_URL`. Para una base nueva, habilita temporalmente `APP_SEED_ENABLED=true` en el backend y desactívala después del primer arranque.
+En Render selecciona **New > Blueprint**, conecta el repositorio y acepta `render.yaml`. El Blueprint crea el backend y frontend. Completa las variables que Render solicite para el backend con los mismos valores descritos arriba. El frontend debe usar rutas relativas `/api`; confirma que no tenga configurada `VITE_API_BASE_URL`. Si la URL pública del backend no es `https://motoboutique-backend.onrender.com`, actualiza el destino de `/api/*` en `render.yaml` y sincroniza el Blueprint. Verifica también `CORS_ALLOWED_ORIGINS` y `FRONTEND_URL`. Para una base nueva, habilita temporalmente `APP_SEED_ENABLED=true` en el backend y desactívala después del primer arranque.
 
 Para habilitar recuperación de contraseña configura también `RESEND_API_KEY` y `EMAIL_FROM` en el backend, con un remitente admitido por Resend. Mantén todas las credenciales solo en **Environment** del servicio privado en Render; no compartas ni subas `backend/.env`. El servicio gratuito de Render puede detenerse por inactividad, así que la primera solicitud puede tardar en responder.
 
-Algunos navegadores bloquean cookies en solicitudes entre sitios. Para una sesión más confiable en producción, asigna dominios propios al frontend y a la API bajo el mismo dominio base (por ejemplo, `app.tudominio.pe` y `api.tudominio.pe`).
+El Rewrite de `/api/*` hace que el navegador envíe las llamadas al mismo origen del frontend, evitando depender de cookies de terceros. Si publicas la API directamente en un dominio distinto, configura `VITE_API_BASE_URL`, `CORS_ALLOWED_ORIGINS` y `SESSION_COOKIE_SAME_SITE=none`; algunos navegadores todavía pueden bloquear cookies entre sitios.
 
 ## Conectar a Supabase
 
@@ -204,7 +205,7 @@ El backend debe usar el rol PostgreSQL `postgres` (no `anon`, ni el usuario de l
 
 ## Publicar frontend y backend
 
-Lo más simple es servir ambos bajo el mismo dominio (por ejemplo un proxy inverso que reenvíe `/api` al backend). Si los publicas en dominios distintos, define `VITE_API_BASE_URL` al compilar el frontend, agrega su origen a `CORS_ALLOWED_ORIGINS` y usa `SESSION_COOKIE_SAME_SITE=none` (requiere HTTPS). En producción el backend establece las cookies de sesión y CSRF como `SameSite=None; Secure`, y expone el token CSRF en una cabecera CORS permitida. Aun así, algunos navegadores bloquean cookies en solicitudes entre sitios; para mayor compatibilidad usa dominios propios bajo el mismo dominio base.
+En Render, la regla Rewrite `/api/*` del Static Site reenvía las peticiones al backend manteniendo la URL del navegador en el origen del frontend. Deja `VITE_API_BASE_URL` sin configurar y ordena esa regla antes de `/* → /index.html`. Así, las cookies de sesión y CSRF son de primera parte y no dependen de que el navegador permita cookies de terceros. Si alojas frontend y backend en dominios separados sin proxy, configura `VITE_API_BASE_URL`, agrega el origen a `CORS_ALLOWED_ORIGINS` y usa `SESSION_COOKIE_SAME_SITE=none` (requiere HTTPS); algunos navegadores aún pueden bloquear cookies entre sitios.
 
 ### Configurar el correo en Render
 
