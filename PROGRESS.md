@@ -12,8 +12,12 @@ categorías, marcas, modelos, compatibilidades, importación), motos, inventario
 entradas, salidas, transferencias, conteo físico, ajustes, kardex), compras (proveedores,
 órdenes, recepciones), dashboards de los cuatro roles, valorización y reportes con
 exportación CSV, XLSX y PDF. Las 40 rutas de lectura que usa el frontend responden 200.
+También se probó en vivo el ciclo de escritura con saldos de kardex correctos en cada paso:
+entrada, salida (y rechazo sin stock), orden de compra con recepción parcial y total,
+transferencia entre almacenes, conteo físico, ajuste manual, aprobación y rechazo, y los
+permisos de cada rol (consulta, contador, almacenero y admin).
 
-**Pruebas:** backend con 117 pruebas unitarias y de MVC en verde
+**Pruebas:** backend con 119 pruebas unitarias y de MVC en verde
 (`./mvnw test "-Dtest=*Test,!*PostgresTest" -Dsurefire.failIfNoSpecifiedTests=false`).
 Las `*PostgresTest` usan Testcontainers y necesitan Docker.
 
