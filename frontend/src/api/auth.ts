@@ -3,7 +3,7 @@ import type { UsuarioSesion } from './types'
 
 /** GET /api/auth/me. Sin sesión lanza ApiError 401 (y de paso entrega la cookie del token CSRF). */
 export function consultarSesion(): Promise<UsuarioSesion> {
-  return apiFetch<UsuarioSesion>('/api/auth/me')
+  return apiFetch<UsuarioSesion>('/api/auth/me', { notificarNoAutorizado: false })
 }
 
 /** POST /api/auth/login (campos "email" y "password", como el formulario original). */

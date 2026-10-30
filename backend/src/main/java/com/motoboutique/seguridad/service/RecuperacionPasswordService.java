@@ -7,6 +7,7 @@ import com.motoboutique.seguridad.repository.LimiteRecuperacionRepository;
 import com.motoboutique.seguridad.repository.TokenRecuperacionRepository;
 import com.motoboutique.seguridad.repository.UsuarioRepository;
 import com.motoboutique.shared.exception.NegocioException;
+import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -18,11 +19,7 @@ import java.util.Locale;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,16 +37,20 @@ public class RecuperacionPasswordService {
     private final LimiteRecuperacionRepository limiteRepository;
     private final UsuarioRepository usuarioRepository;
     private final UsuarioService usuarioService;
-    private final ObjectProvider<JavaMailSender> mailSenderProvider;
+    private final CorreoRecuperacion correoRecuperacion;
 
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
 
-    @Value("${spring.mail.username:}")
-    private String remitente;
+    @Value("${app.password-reset.token-ttl-minutes:30}")
+    private long expiracionMinutos;
 
-    @Value("${spring.profiles.active:dev}")
-    private String perfilActivo;
+    @PostConstruct
+    void validarConfiguracion() {
+        if (expiracionMinutos < 1) {
+            throw new IllegalStateException("PASSWORD_RESET_TOKEN_TTL_MINUTES debe ser mayor que cero.");
+        }
+    }
 
     @Transactional
     public void solicitar(String email) {
@@ -67,10 +68,12 @@ public class RecuperacionPasswordService {
         byte[] bytes = new byte[32];
         RANDOM.nextBytes(bytes);
         String tokenPlano = HexFormat.of().formatHex(bytes);
+        Instant ahora = Instant.now();
+        tokenRepository.invalidarNoUsadosPorUsuario(usuario.get().getId(), ahora);
         TokenRecuperacion token = new TokenRecuperacion();
         token.setUsuario(usuario.get());
         token.setTokenHash(sha256(tokenPlano));
-        token.setExpiraEn(Instant.now().plus(Duration.ofMinutes(30)));
+        token.setExpiraEn(ahora.plus(Duration.ofMinutes(expiracionMinutos)));
         tokenRepository.save(token);
         enviarEnlace(normalizado, tokenPlano);
     }
@@ -118,25 +121,7 @@ public class RecuperacionPasswordService {
 
     private void enviarEnlace(String email, String token) {
         String enlace = frontendUrl.replaceAll("/+$", "") + "/restablecer-password?token=" + token;
-        if ("dev".equalsIgnoreCase(perfilActivo)) {
-            log.info("Enlace de recuperación local para {}: {}", email, enlace);
-            return;
-        }
-        JavaMailSender sender = mailSenderProvider.getIfAvailable();
-        if (sender == null) {
-            log.error("No se pudo enviar recuperación: JavaMailSender no está configurado.");
-            return;
-        }
-        SimpleMailMessage mensaje = new SimpleMailMessage();
-        mensaje.setTo(email);
-        mensaje.setFrom(remitente);
-        mensaje.setSubject("Restablecer contraseña - Moto Boutique");
-        mensaje.setText("Solicitaste restablecer tu contraseña. El enlace vence en 30 minutos:\n" + enlace);
-        try {
-            sender.send(mensaje);
-        } catch (MailException ex) {
-            log.error("Falló el envío del enlace de recuperación a un destinatario.", ex);
-        }
+        correoRecuperacion.enviar(email, enlace, expiracionMinutos);
     }
 
     private String sha256(String texto) {

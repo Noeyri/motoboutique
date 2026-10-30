@@ -11,8 +11,13 @@ import { Logo } from '../components/Logo'
 import { useAuth } from './AuthContext'
 
 const loginSchema = z.object({ email: z.string().min(1, 'Ingresa tu usuario o correo.'), password: z.string().min(1, 'Ingresa tu contraseña.') })
-const emailSchema = z.object({ email: z.string().email('Ingresa un correo válido.') })
-const resetSchema = z.object({ password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres.'), confirmacion: z.string() }).refine((value) => value.password === value.confirmacion, { path: ['confirmacion'], message: 'Las contraseñas no coinciden.' })
+const emailSchema = z.object({ email: z.string().email('Ingresa un correo válido.').max(150, 'El correo admite hasta 150 caracteres.') })
+const resetSchema = z.object({
+  password: z.string()
+    .min(8, 'La contraseña debe tener al menos 8 caracteres.')
+    .refine((value) => new TextEncoder().encode(value).length <= 72, 'La contraseña no puede superar 72 bytes.'),
+  confirmacion: z.string(),
+}).refine((value) => value.password === value.confirmacion, { path: ['confirmacion'], message: 'Las contraseñas no coinciden.' })
 type LoginValues = z.infer<typeof loginSchema>
 type EmailValues = z.infer<typeof emailSchema>
 type ResetValues = z.infer<typeof resetSchema>
@@ -60,6 +65,7 @@ export function RecuperarPage() {
   const form = useForm<EmailValues>({ resolver: zodResolver(emailSchema) })
   const [enviado, setEnviado] = useState(false)
   const submit = form.handleSubmit(async ({ email }) => {
+    setEnviado(false)
     try {
       if (!hayTokenCsrf()) await consultarSesion().catch(() => undefined)
       await solicitarRecuperacion(email)
@@ -74,7 +80,9 @@ export function RecuperarPage() {
     <label>Correo corporativo<input type="email" autoComplete="email" {...form.register('email')} /></label>
     {form.formState.errors.email && <small role="alert">{form.formState.errors.email.message}</small>}
     {form.formState.errors.root && <p role="alert" className="login-error">{form.formState.errors.root.message}</p>}
-    {enviado && <p role="status">Solicitud enviada.</p>}
+    {enviado && <p className="login-success" role="status">
+      Si la cuenta existe, enviamos instrucciones a la dirección ingresada. Revisa tu bandeja de entrada y spam.
+    </p>}
     <button className="btn primary" disabled={form.formState.isSubmitting}>Enviar instrucciones</button>
     <Link className="link" to="/login">Volver al inicio de sesión</Link>
   </form></section></main>
@@ -97,7 +105,8 @@ export function RestablecerPage() {
     }
   })
   return <main className="auth"><AuthBrand /><section className="auth-form"><form className="login-card" onSubmit={(event) => void submit(event)}>
-    <small>SEGURIDAD</small><h2>Restablecer contraseña</h2>
+    <small>SEGURIDAD</small><h2>Restablece tu contraseña</h2>
+    <p>Ingresa una nueva contraseña para recuperar el acceso a tu cuenta.</p>
     <label>Nueva contraseña<input type="password" autoComplete="new-password" {...form.register('password')} /></label>
     {form.formState.errors.password && <small role="alert">{form.formState.errors.password.message}</small>}
     <label>Confirmar contraseña<input type="password" autoComplete="new-password" {...form.register('confirmacion')} /></label>

@@ -75,11 +75,14 @@ El frontend todavía no tiene pruebas automatizadas (ver `PROGRESS.md`); `npm ru
 
 ## Variables de entorno
 
-**Backend** (`backend/.env`, ver `backend/.env.example`): `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `DEMO_PASSWORD`, `CORS_ALLOWED_ORIGINS` y, solo en producción, `SESSION_COOKIE_SAME_SITE`.
+**Backend** (`backend/.env`, ver `backend/.env.example`): `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `DEMO_PASSWORD`, `CORS_ALLOWED_ORIGINS`, `RESEND_API_KEY`, `EMAIL_FROM`, `FRONTEND_URL` y `PASSWORD_RESET_TOKEN_TTL_MINUTES` (opcional, 30 por defecto). En producción también se configura `SESSION_COOKIE_SAME_SITE` cuando el frontend y la API están en sitios distintos.
 
 **Frontend** (`frontend/.env`, ver `frontend/.env.example`): `VITE_API_BASE_URL` (vacío en desarrollo) y `VITE_DEV_PROXY_TARGET`.
 
 Los archivos `.env` no se suben a Git. Los `.env.example` no contienen credenciales reales.
+
+El correo de recuperación se envía por la API HTTPS de Resend tanto en local como en producción. Configura `RESEND_API_KEY` y un `EMAIL_FROM` admitido por tu cuenta; no se registra el enlace de recuperación en los logs. El remitente de prueba `onboarding@resend.dev` puede estar limitado a destinatarios autorizados por Resend.
+Si Resend falla, la API responde HTTP 503; esta política operativa puede revelar si la dirección está registrada durante una falla del proveedor.
 
 ## Conectar a Supabase
 
@@ -116,3 +119,7 @@ El backend debe usar el rol PostgreSQL `postgres` (no `anon`, ni el usuario de l
 ## Publicar frontend y backend
 
 Lo más simple es servir ambos bajo el mismo dominio (por ejemplo un proxy inverso que reenvíe `/api` al backend). Si los publicas en dominios distintos, define `VITE_API_BASE_URL` al compilar el frontend, agrega su origen a `CORS_ALLOWED_ORIGINS` y usa `SESSION_COOKIE_SAME_SITE=none` (requiere HTTPS). Ten en cuenta que, entre dominios sin relación, el navegador no deja que el frontend lea la cookie del token CSRF; ver "Tareas pendientes" en `PROGRESS.md`.
+
+### Configurar el correo en Render
+
+Este repositorio no incluye `render.yaml`; configura las variables en el servicio backend desde el dashboard de Render. Define `SPRING_PROFILES_ACTIVE=prod`, `RESEND_API_KEY` como secreto, `EMAIL_FROM` con un remitente verificado, `FRONTEND_URL` con la URL pública exacta del frontend, `PASSWORD_RESET_TOKEN_TTL_MINUTES=30` (opcional), y los valores de base de datos y `CORS_ALLOWED_ORIGINS` que ya requiere el despliegue. Si frontend y API están en dominios distintos, revisa `SESSION_COOKIE_SAME_SITE=none` y configura la URL de API del frontend antes de compilarlo. No guardes la clave de Resend en Git ni en variables `VITE_*`. En producción, verifica el dominio remitente en Resend y publica los registros DNS solicitados, incluidos SPF y DKIM. Un error de Resend devuelve HTTP 503; el proveedor puede restringir los destinatarios del remitente de prueba.

@@ -210,3 +210,4 @@ td { font-size:12px; }
 @media(max-width:420px){
   .metrics{grid-template-columns:1fr}.top-actions{gap:4px}.section-title{flex-direction:column}.actions{width:100%}.actions .btn{flex:1}.state-preview{display:none}.stepper b{display:none}.modal{padding:20px}.auth-form{place-items:start center}.login-card h2{font-size:26px}
 }
+.login-success { padding:12px; border:1px solid color-mix(in srgb,var(--success) 35%,var(--border)); border-radius:var(--radius); background:color-mix(in srgb,var(--success) 8%,var(--surface)); color:var(--text); font-size:12px; line-height:1.5; }

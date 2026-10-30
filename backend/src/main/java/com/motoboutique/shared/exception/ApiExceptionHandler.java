@@ -37,6 +37,11 @@ public class ApiExceptionHandler {
         return problema(404, ex.getMessage());
     }
 
+    @ExceptionHandler(CorreoNoDisponibleException.class)
+    public ProblemDetail manejarCorreoNoDisponible(CorreoNoDisponibleException ex) {
+        return problema(503, "No se pudo enviar el correo de recuperación. Inténtalo más tarde.");
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail manejarValidacion(MethodArgumentNotValidException ex) {
         Map<String, String> errores = new LinkedHashMap<>();
