@@ -42,7 +42,7 @@ Necesitas dos terminales: una para el backend y otra para el frontend.
 
    En PowerShell o CMD, también desde `backend`, ejecuta `.\mvnw.cmd spring-boot:run`.
 
-   Flyway crea las tablas y el `DataSeeder` carga permisos, roles base y usuarios. Se puede repetir sin duplicar datos.
+   Flyway crea las tablas. Los seeders están desactivados por defecto; si es una base nueva y necesitas crear roles, permisos y el administrador, agrega `APP_SEED_ENABLED=true` a `backend/.env` para el primer arranque y luego quítala. Los usuarios demo requieren además `DEMO_PASSWORD` y solo se crean en desarrollo.
 
 ### 2. Frontend (puerto 5173)
 
@@ -128,7 +128,7 @@ No escribas Build Command ni Start Command: el Dockerfile ya compila e inicia el
 | `EMAIL_FROM` | Remitente permitido en Resend, si habilitarás recuperación por correo |
 | `PASSWORD_RESET_TOKEN_TTL_MINUTES` | `30` (opcional; este es el valor predeterminado) |
 
-Render proporciona `PORT` automáticamente; no lo agregues manualmente. Flyway aplicará las migraciones al iniciar. No configures `DEMO_PASSWORD` en producción.
+Render proporciona `PORT` automáticamente; no lo agregues manualmente. Flyway aplicará las migraciones al iniciar. Los seeders están desactivados por defecto para evitar que los datos borrados reaparezcan. Solo en una base nueva, agrega temporalmente `APP_SEED_ENABLED=true` para crear roles, permisos y administrador; después del primer arranque, elimina la variable o cámbiala a `false`. No configures `DEMO_PASSWORD` en producción.
 
 #### 3. Crear el frontend
 
@@ -159,13 +159,13 @@ En las variables del backend, configura `CORS_ALLOWED_ORIGINS` y `FRONTEND_URL` 
 
 #### 5. Comprobar el despliegue
 
-Revisa los logs del backend: debe conectar con Supabase, completar Flyway y crear el administrador. Abre el frontend e inicia sesión con `ADMIN_EMAIL` y `ADMIN_PASSWORD`; después prueba una consulta y una operación protegida.
+Revisa los logs del backend: debe conectar con Supabase y completar Flyway. Si es la primera instalación, confirma que creó el administrador antes de desactivar `APP_SEED_ENABLED`. Abre el frontend e inicia sesión con `ADMIN_EMAIL` y `ADMIN_PASSWORD`; después prueba una consulta y una operación protegida.
 
 Para recuperación de contraseña, crea/verifica un remitente en Resend y configura `RESEND_API_KEY` y `EMAIL_FROM` en el backend. Esta app envía correo mediante la API HTTPS de Resend: no necesita variables SMTP `SPRING_MAIL_*`. El remitente de prueba puede limitar los destinatarios permitidos. Nunca publiques la clave en Git ni en el frontend.
 
 ### Opción B: usar el Blueprint
 
-En Render selecciona **New > Blueprint**, conecta el repositorio y acepta `render.yaml`. El Blueprint crea el backend y frontend. Completa las variables que Render solicite para el backend con los mismos valores descritos arriba. El frontend debe usar rutas relativas `/api`; confirma que no tenga configurada `VITE_API_BASE_URL`. Si la URL pública del backend no es `https://motoboutique-backend.onrender.com`, actualiza el destino de `/api/*` en `render.yaml` y sincroniza el Blueprint. Verifica también `CORS_ALLOWED_ORIGINS` y `FRONTEND_URL`.
+En Render selecciona **New > Blueprint**, conecta el repositorio y acepta `render.yaml`. El Blueprint crea el backend y frontend. Completa las variables que Render solicite para el backend con los mismos valores descritos arriba. El frontend debe usar rutas relativas `/api`; confirma que no tenga configurada `VITE_API_BASE_URL`. Si la URL pública del backend no es `https://motoboutique-backend.onrender.com`, actualiza el destino de `/api/*` en `render.yaml` y sincroniza el Blueprint. Verifica también `CORS_ALLOWED_ORIGINS` y `FRONTEND_URL`. Para una base nueva, habilita temporalmente `APP_SEED_ENABLED=true` en el backend y desactívala después del primer arranque.
 
 Para habilitar recuperación de contraseña configura también `RESEND_API_KEY` y `EMAIL_FROM` en el backend, con un remitente admitido por Resend. Mantén todas las credenciales solo en **Environment** del servicio privado en Render; no compartas ni subas `backend/.env`. El servicio gratuito de Render puede detenerse por inactividad, así que la primera solicitud puede tardar en responder.
 
@@ -187,7 +187,7 @@ Supabase proporciona PostgreSQL compatible con el backend. Para usarla como base
    DB_PASSWORD=TU_CONTRASENA
    ```
 
-4. Arranca el backend. Flyway crea o actualiza las tablas automáticamente, incluida `estado_aplicacion` para los datos editables del frontend.
+4. Arranca el backend. Flyway crea o actualiza las tablas automáticamente, incluida `estado_aplicacion` para los datos editables del frontend. Los seeders están desactivados por defecto; si necesitas crear los roles y el administrador en una base nueva, habilita temporalmente `APP_SEED_ENABLED=true` y desactívalo después del primer arranque.
 5. Si la contraseña contiene caracteres especiales, usa su codificación URL cuando corresponda.
 6. Para producción configura también el host permitido del frontend:
 
