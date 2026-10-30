@@ -12,6 +12,7 @@ import com.motoboutique.shared.web.PageResponse;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,18 +28,78 @@ public class ReportesService {
     private final OrdenCompraRepository ordenRepository;
     private final ConfiguracionEmpresaRepository configuracionRepository;
 
+    /** Tope de filas de una exportación, para no generar archivos sin límite. */
+    public static final int MAX_FILAS_EXPORTACION = 10_000;
+    private static final int TAMANIO_LOTE = 100;
+
     @Transactional(readOnly = true)
     public ReporteDto generar(String tipo, LocalDate fechaCorte, Long almacenId, Long categoriaId,
                               Long productoId, Instant desde, Instant hasta, String q,
                               int page, int size) {
+        String normalizado = normalizarTipo(tipo, desde, hasta);
+        Datos datos = cargar(normalizado, fechaCorte, almacenId, categoriaId, productoId, desde,
+                hasta, q, Math.max(page, 0), Math.max(1, Math.min(size, TAMANIO_LOTE)));
+        return reporte(normalizado, datos);
+    }
+
+    /**
+     * Reporte con todas las filas que cumplen los filtros (hasta {@link #MAX_FILAS_EXPORTACION}),
+     * para exportar. Recorre las páginas porque las consultas limitan cada página a 100 filas.
+     */
+    @Transactional(readOnly = true)
+    public ReporteDto generarCompleto(String tipo, LocalDate fechaCorte, Long almacenId,
+                                      Long categoriaId, Long productoId, Instant desde,
+                                      Instant hasta, String q) {
+        String normalizado = normalizarTipo(tipo, desde, hasta);
+        List<List<String>> filas = new ArrayList<>();
+        Map<String, String> totales = new LinkedHashMap<>();
+        Datos datos;
+        int pagina = 0;
+        do {
+            datos = cargar(normalizado, fechaCorte, almacenId, categoriaId, productoId, desde,
+                    hasta, q, pagina, TAMANIO_LOTE);
+            filas.addAll(datos.filas());
+            acumularTotales(totales, datos.totales());
+            pagina++;
+        } while (pagina < datos.totalPaginas() && filas.size() < MAX_FILAS_EXPORTACION);
+        List<List<String>> exportadas = filas.size() > MAX_FILAS_EXPORTACION
+                ? filas.subList(0, MAX_FILAS_EXPORTACION) : filas;
+        return reporte(normalizado, new Datos(datos.columnas(), datos.totalElementos(), 1, 0,
+                Math.max(1, exportadas.size()), exportadas, totales));
+    }
+
+    private String normalizarTipo(String tipo, Instant desde, Instant hasta) {
         if (desde != null && hasta != null && desde.isAfter(hasta)) {
             throw new NegocioException("La fecha desde no puede ser posterior a la fecha hasta.");
         }
-        String normalizado = tipo.toLowerCase(java.util.Locale.ROOT);
-        int pagina = Math.max(page, 0);
-        int tamanio = Math.max(1, Math.min(size, 100));
+        return tipo.toLowerCase(java.util.Locale.ROOT);
+    }
+
+    // Los totales "...Pagina" solo cubren las filas de cada página: al juntar páginas se suman.
+    // Los demás ya son del reporte completo y se repiten igual en cada página.
+    private void acumularTotales(Map<String, String> acumulados, Map<String, String> pagina) {
+        pagina.forEach((clave, valor) -> {
+            if (clave.endsWith("Pagina") && acumulados.containsKey(clave)) {
+                acumulados.put(clave, texto(new BigDecimal(acumulados.get(clave))
+                        .add(new BigDecimal(valor))));
+            } else {
+                acumulados.putIfAbsent(clave, valor);
+            }
+        });
+    }
+
+    private ReporteDto reporte(String tipo, Datos datos) {
+        var empresa = configuracionRepository.findById((short) 1).orElse(null);
+        return new ReporteDto(tipo, empresa == null ? "" : empresa.getRazonSocial(),
+                empresa == null ? "" : empresa.getRuc(), Instant.now(), datos.columnas(),
+                datos.pagina(), datos.totales());
+    }
+
+    private Datos cargar(String normalizado, LocalDate fechaCorte, Long almacenId,
+                         Long categoriaId, Long productoId, Instant desde, Instant hasta,
+                         String q, int pagina, int tamanio) {
         String busqueda = q == null || q.isBlank() ? null : q.trim();
-        Datos datos = switch (normalizado) {
+        return switch (normalizado) {
             case "valorizacion" -> valorizacion(fechaCorte, almacenId, categoriaId,
                     busqueda, pagina, tamanio);
             case "kardex" -> kardex(productoId, almacenId, desde, hasta, pagina, tamanio);
@@ -50,10 +111,6 @@ public class ReportesService {
                     busqueda, pagina, tamanio);
             default -> throw new NegocioException("El tipo de reporte indicado no existe.");
         };
-        var empresa = configuracionRepository.findById((short) 1).orElse(null);
-        return new ReporteDto(normalizado, empresa == null ? "" : empresa.getRazonSocial(),
-                empresa == null ? "" : empresa.getRuc(), Instant.now(), datos.columnas(),
-                datos.pagina(), datos.totales());
     }
 
     private Datos valorizacion(LocalDate fechaCorte, Long almacenId, Long categoriaId,
