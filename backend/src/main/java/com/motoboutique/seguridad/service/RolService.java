@@ -17,6 +17,15 @@ public interface RolService {
     RolDto asegurar(String codigo, String nombre, String descripcion, boolean sistema,
                     Collection<String> codigosPermisos);
 
+    /**
+     * Agrega al rol existente los permisos que le falten, sin quitar ninguno. Si el rol no existe
+     * no hace nada. Lo usa el seeder para que los permisos de una versión nueva lleguen a los roles
+     * ya creados.
+     *
+     * @throws com.motoboutique.shared.exception.NegocioException si algún permiso no existe
+     */
+    void agregarPermisos(String codigo, Collection<String> codigosPermisos);
+
     List<RolDto> listar();
 
     Optional<RolDto> buscarPorCodigo(String codigo);

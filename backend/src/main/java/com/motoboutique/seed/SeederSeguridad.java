@@ -1,5 +1,6 @@
 package com.motoboutique.seed;
 
+import com.motoboutique.seguridad.dto.PermisoDto;
 import com.motoboutique.seguridad.dto.UsuarioCrearDto;
 import com.motoboutique.seguridad.service.PermisoService;
 import com.motoboutique.seguridad.service.RolService;
@@ -7,6 +8,7 @@ import com.motoboutique.seguridad.service.UsuarioService;
 import com.motoboutique.shared.exception.NegocioException;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -99,11 +101,20 @@ class SeederSeguridad implements SeederFase {
 
     @Override
     public void ejecutar() {
+        Set<String> existentes = permisoService.listar().stream()
+                .map(PermisoDto::getCodigo)
+                .collect(Collectors.toSet());
         for (PermisoBase permiso : PERMISOS) {
             permisoService.asegurar(permiso.codigo(), permiso.descripcion(), MODULO);
         }
         for (RolBase rol : ROLES) {
             rolService.asegurar(rol.codigo(), rol.nombre(), rol.descripcion(), true, rol.permisos());
+            // ADMIN siempre tiene todos los permisos. Los demás roles solo reciben los permisos nuevos
+            // de esta versión, para no devolver los que un administrador quitó a propósito.
+            List<String> agregar = "ADMIN".equals(rol.codigo())
+                    ? rol.permisos()
+                    : rol.permisos().stream().filter(codigo -> !existentes.contains(codigo)).toList();
+            rolService.agregarPermisos(rol.codigo(), agregar);
         }
         crearAdministrador();
     }

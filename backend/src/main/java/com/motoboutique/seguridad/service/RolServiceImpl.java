@@ -50,6 +50,27 @@ class RolServiceImpl implements RolService {
     }
 
     @Override
+    @Transactional
+    public void agregarPermisos(String codigo, Collection<String> codigosPermisos) {
+        if (codigosPermisos == null || codigosPermisos.isEmpty()) {
+            return;
+        }
+        rolRepository.findByCodigo(codigo).ifPresent(rol -> {
+            Set<String> actuales = rol.getPermisos().stream().map(Permiso::getCodigo)
+                    .collect(Collectors.toSet());
+            List<String> faltantes = codigosPermisos.stream()
+                    .filter(permiso -> !actuales.contains(permiso))
+                    .distinct()
+                    .toList();
+            if (faltantes.isEmpty()) {
+                return;
+            }
+            rol.getPermisos().addAll(resolverPermisos(faltantes));
+            rolRepository.save(rol);
+        });
+    }
+
+    @Override
     public List<RolDto> listar() {
         return rolMapper.toDtoList(rolRepository.findByEliminadoFalseOrderByNombreAsc());
     }

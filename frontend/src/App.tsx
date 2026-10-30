@@ -50,13 +50,24 @@ const KardexPage = lazy(() => import('./features/finanzas/KardexPage')
 const ReportesPage = lazy(() => import('./features/finanzas/ReportesPage')
   .then((modulo) => ({ default: modulo.ReportesPage })))
 
+// Dashboard propio de cada rol base. Va primero porque los permisos se solapan
+// (CONSULTA también tiene INVENTARIO_VER y acabaría en el dashboard del almacén).
+const DASHBOARD_POR_ROL: Array<[string, string]> = [
+  ['ADMIN', '/admin/dashboard'],
+  ['CONTADOR', '/finanzas/dashboard'],
+  ['ALMACENERO', '/almacen/dashboard'],
+  ['CONSULTA', '/consulta/dashboard'],
+]
+
 function RedirectAfterLogin() {
-  const { tienePermiso } = useAuth()
-  const dashboardPath = ['/admin/dashboard', '/finanzas/dashboard', '/almacen/dashboard', '/consulta/dashboard']
-    .find((path) => {
-      const ruta = rutas.find((item) => item.path === path)
-      return ruta !== undefined && tienePermiso(ruta.permiso)
-    })
+  const { tienePermiso, tieneRol } = useAuth()
+  const permitido = (path: string) => {
+    const ruta = rutas.find((item) => item.path === path)
+    return ruta !== undefined && tienePermiso(ruta.permiso)
+  }
+  const dashboardPath = DASHBOARD_POR_ROL
+    .find(([rol, path]) => tieneRol(rol) && permitido(path))?.[1]
+    ?? ['/admin/dashboard', '/finanzas/dashboard', '/almacen/dashboard', '/consulta/dashboard'].find(permitido)
   const path = dashboardPath ?? rutas.find((ruta) => tienePermiso(ruta.permiso))?.path
   return <Navigate to={path ?? '/403'} replace />
 }

@@ -54,8 +54,8 @@ public interface OrdenCompraRepository extends JpaRepository<OrdenCompra, Long>,
             from proveedores p
             left join ordenes_compra o on o.proveedor_id = p.id and o.eliminado = false
               and o.estado in ('CONFIRMADA', 'RECIBIDA')
-              and (:desde is null or o.fecha >= :desde)
-              and (:hasta is null or o.fecha <= :hasta)
+              and (cast(:desde as timestamptz) is null or o.fecha >= cast(:desde as timestamptz))
+              and (cast(:hasta as timestamptz) is null or o.fecha <= cast(:hasta as timestamptz))
             where p.eliminado = false
               and (:q is null or lower(p.razon_social) like lower(concat('%', :q, '%'))
                    or lower(p.ruc) like lower(concat('%', :q, '%')))
@@ -74,8 +74,8 @@ public interface OrdenCompraRepository extends JpaRepository<OrdenCompra, Long>,
                 from proveedores p
                 join ordenes_compra o on o.proveedor_id = p.id and o.eliminado = false
                   and o.estado in ('CONFIRMADA', 'RECIBIDA')
-                  and (:desde is null or o.fecha >= :desde)
-                  and (:hasta is null or o.fecha <= :hasta)
+                  and (cast(:desde as timestamptz) is null or o.fecha >= cast(:desde as timestamptz))
+                  and (cast(:hasta as timestamptz) is null or o.fecha <= cast(:hasta as timestamptz))
                 where p.eliminado = false
                   and (:q is null or lower(p.razon_social) like lower(concat('%', :q, '%'))
                        or lower(p.ruc) like lower(concat('%', :q, '%')))
@@ -90,8 +90,8 @@ public interface OrdenCompraRepository extends JpaRepository<OrdenCompra, Long>,
             from ordenes_compra o join proveedores p on p.id = o.proveedor_id
             where p.eliminado = false and o.eliminado = false
               and o.estado in ('CONFIRMADA', 'RECIBIDA')
-              and (:desde is null or o.fecha >= :desde)
-              and (:hasta is null or o.fecha <= :hasta)
+              and (cast(:desde as timestamptz) is null or o.fecha >= cast(:desde as timestamptz))
+              and (cast(:hasta as timestamptz) is null or o.fecha <= cast(:hasta as timestamptz))
               and (:q is null or lower(p.razon_social) like lower(concat('%', :q, '%'))
                    or lower(p.ruc) like lower(concat('%', :q, '%')))
             """, nativeQuery = true)

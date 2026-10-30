@@ -5,6 +5,7 @@ import { useEstadoPersistente } from '../hooks/useEstadoPersistente'
 import { rutasPermitidas } from '../app/routes'
 import { useAuth } from '../auth/AuthContext'
 import { Icon } from '../components/Icon'
+import { Logo } from '../components/Logo'
 
 export interface AppShellContext {
   pageSize: number
@@ -18,11 +19,13 @@ export function AppShell() {
   const [sidebar, setSidebar] = useState(false)
   const [preferencias, setPreferencias, preferenciasCargadas] =
     useEstadoPersistente('preferencias', { tema: 'light', tamanioPagina: 20, filtros: {} as Record<string, string> })
-  const nav = useMemo(() => rutasPermitidas(tienePermiso), [tienePermiso])
-  const actual = nav.find((item) => location.pathname === item.path) ?? nav[0]
+  const permitidas = useMemo(() => rutasPermitidas(tienePermiso), [tienePermiso])
+  const nav = useMemo(() => permitidas.filter((item) => item.enMenu !== false), [permitidas])
+  const actual = permitidas.find((item) => location.pathname === item.path) ?? nav[0]
   const rolTexto = usuario?.roles.join(', ') ?? 'Usuario'
   const iconos: Record<string, string> = {
-    Dashboard: 'grid', Usuarios: 'users', 'Roles y permisos': 'shield', Configuración: 'settings',
+    'Dashboard general': 'grid', 'Dashboard de almacén': 'grid', 'Dashboard de finanzas': 'grid',
+    'Dashboard de consulta': 'grid', Usuarios: 'users', 'Roles y permisos': 'shield', Configuración: 'settings',
     Aprobaciones: 'check', Movimientos: 'move', Entradas: 'plus', Salidas: 'logout',
     Transferencias: 'arrow', 'Conteo físico': 'check', Ajustes: 'settings', Productos: 'box',
     Motocicletas: 'bike', Importación: 'upload', Proveedores: 'users', Órdenes: 'cart',
@@ -55,7 +58,7 @@ export function AppShell() {
 
   return <div className={`app ${preferencias.tema === 'dark' ? 'dark' : ''}`}>
     <aside className={sidebar ? 'sidebar open' : 'sidebar'}>
-      <div className="brand"><span>MB</span><b>Moto Boutique</b></div>
+      <div className="brand"><Logo /><b>Moto Boutique</b></div>
       <div className="role-label">ESPACIO DE {rolTexto.toUpperCase()}</div>
       <nav>{nav.map((item, index) => <div className="nav-entry" key={item.path}>
         {item.grupo && item.grupo !== nav[index - 1]?.grupo && <span className="nav-group">{item.grupo}</span>}

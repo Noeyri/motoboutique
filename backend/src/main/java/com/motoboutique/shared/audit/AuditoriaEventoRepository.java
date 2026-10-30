@@ -14,13 +14,16 @@ public interface AuditoriaEventoRepository extends JpaRepository<AuditoriaEvento
     @Query("""
             select a from AuditoriaEvento a
             where a.eliminado = false
-              and (:q is null or lower(a.actor) like lower(concat('%', :q, '%'))
-                   or lower(a.accion) like lower(concat('%', :q, '%'))
-                   or lower(a.entidad) like lower(concat('%', :q, '%')))
-              and (:usuario is null or lower(a.actor) like lower(concat('%', :usuario, '%')))
-              and (:accion is null or lower(a.accion) like lower(concat('%', :accion, '%')))
-              and (:desde is null or a.fecha >= :desde)
-              and (:hasta is null or a.fecha <= :hasta)
+              and (cast(:q as String) is null
+                   or lower(a.actor) like lower(concat('%', cast(:q as String), '%'))
+                   or lower(a.accion) like lower(concat('%', cast(:q as String), '%'))
+                   or lower(a.entidad) like lower(concat('%', cast(:q as String), '%')))
+              and (cast(:usuario as String) is null
+                   or lower(a.actor) like lower(concat('%', cast(:usuario as String), '%')))
+              and (cast(:accion as String) is null
+                   or lower(a.accion) like lower(concat('%', cast(:accion as String), '%')))
+              and a.fecha >= :desde
+              and a.fecha <= :hasta
             """)
     Page<AuditoriaEvento> buscar(@Param("q") String q, @Param("usuario") String usuario,
             @Param("accion") String accion, @Param("desde") Instant desde,
