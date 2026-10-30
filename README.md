@@ -86,31 +86,85 @@ Si Resend falla, la API responde HTTP 503; esta política operativa puede revela
 
 ## Desplegar en Render
 
-El repositorio incluye [`render.yaml`](render.yaml), que crea el backend como servicio Docker y el frontend como sitio estático. La base de datos permanece en Supabase.
+La base de datos permanece en Supabase. Puedes crear los servicios desde el Dashboard siguiendo los campos de abajo (como en **New Static Site**) o elegir **New > Blueprint** y conectar [`render.yaml`](render.yaml) para que Render cree los dos servicios automáticamente.
 
-1. **Prepara PostgreSQL en Supabase.** En el proyecto abre **Connect** y usa el endpoint **Session pooler** para un backend persistente en Render. Copia exactamente host, puerto, usuario y base de datos que muestra Supabase; no uses la contraseña de conexión dentro de Git.
-2. **Conecta el repositorio a Render.** En Render elige **New > Blueprint**, conecta este repositorio y acepta `render.yaml`. El Dockerfile del backend está en `backend/Dockerfile`.
-3. **Completa las variables que Render solicita para `motoboutique-api`:**
+### Opción A: crear los servicios desde el Dashboard
 
-   | Variable | Valor |
-   |---|---|
-   | `DB_HOST` | Host del Session pooler de Supabase |
-   | `DB_PORT` | Puerto indicado por Supabase para Session pooler |
-   | `DB_NAME` | Nombre de la base indicado por Supabase |
-   | `DB_USER` | Usuario completo indicado por Supabase |
-   | `DB_PASSWORD` | Contraseña de PostgreSQL de Supabase |
-   | `ADMIN_EMAIL` | Correo que usarás para iniciar sesión como administrador |
-   | `ADMIN_PASSWORD` | Contraseña fuerte y única para el administrador |
-   | `CORS_ALLOWED_ORIGINS` | `https://` más el dominio público del frontend, sin `/` final |
-   | `FRONTEND_URL` | El mismo dominio público del frontend |
-   | `RESEND_API_KEY` | Clave privada de Resend (solo si habilitarás recuperación por correo) |
-   | `EMAIL_FROM` | Remitente permitido en Resend (solo si habilitarás recuperación por correo) |
+Primero crea el backend; después crea el frontend con la URL pública que Render asigne a la API.
 
-   `SPRING_PROFILES_ACTIVE=prod`, `SESSION_COOKIE_SAME_SITE=none` y `PASSWORD_RESET_TOKEN_TTL_MINUTES=30` ya quedan declaradas en el Blueprint. Para recuperación por correo, crea/verifica el remitente en Resend y define `RESEND_API_KEY` y `EMAIL_FROM`; sin estas variables, el resto del sistema funciona pero el envío de correos no. No configures `DEMO_PASSWORD`: en producción no se crean usuarios demo. Flyway aplicará las migraciones al arrancar.
-4. **Completa la variable de `motoboutique-frontend`:** `VITE_API_BASE_URL` debe ser la URL pública del backend, por ejemplo `https://motoboutique-api.onrender.com` (sin `/api` al final). Las variables `VITE_*` se incorporan al compilar: si las cambias, vuelve a desplegar el frontend.
-5. **Verifica los dominios reales.** Si Render asignó nombres distintos, actualiza `CORS_ALLOWED_ORIGINS` y `FRONTEND_URL` en el backend con el origen exacto del frontend, y `VITE_API_BASE_URL` en el frontend con la URL del backend. Guarda los cambios y espera a que ambos servicios terminen el despliegue.
-6. **Comprueba los logs del backend.** Confirma que conectó con PostgreSQL, que Flyway terminó sin errores y que creó el administrador. Luego abre la URL del frontend e inicia sesión con `ADMIN_EMAIL` y `ADMIN_PASSWORD`.
-7. **Prueba la sesión y una operación protegida.** La API usa cookies de sesión y CSRF. El frontend debe enviar credenciales; la API expone el token CSRF en una cabecera para que funcione entre los dos dominios de Render. No pongas contraseñas ni claves en variables `VITE_*`.
+#### 1. Preparar Supabase
+
+En Supabase abre **Connect** y copia los datos del **Session pooler**: host, puerto, base de datos y usuario. Usa el puerto que indica Supabase para esa conexión (normalmente `5432`); no uses el puerto `6543` del transaction pooler. Ten lista también la contraseña de la base.
+
+#### 2. Crear el backend
+
+En Render selecciona **New > Web Service**, conecta el repositorio y completa:
+
+| Campo de Render | Valor |
+|---|---|
+| Name | `motoboutique-backend` |
+| Branch | La rama que vas a desplegar, por ejemplo `main` |
+| Language / Runtime | `Docker` |
+| Root Directory | `backend` |
+| Dockerfile Path | `Dockerfile` |
+| Docker Context Directory | `.` |
+
+No escribas Build Command ni Start Command: el Dockerfile ya compila e inicia el backend. En **Environment Variables**, agrega:
+
+| Variable | Valor |
+|---|---|
+| `SPRING_PROFILES_ACTIVE` | `prod` |
+| `DB_HOST` | Host del Session pooler de Supabase |
+| `DB_PORT` | Puerto del Session pooler |
+| `DB_NAME` | Nombre de la base indicado por Supabase |
+| `DB_USER` | Usuario completo indicado por Supabase |
+| `DB_PASSWORD` | Contraseña de PostgreSQL de Supabase |
+| `ADMIN_EMAIL` | Correo que usarás para iniciar sesión como administrador |
+| `ADMIN_PASSWORD` | Contraseña fuerte y única para el administrador |
+| `CORS_ALLOWED_ORIGINS` | Se completa en el paso 4 con el dominio del frontend |
+| `FRONTEND_URL` | Se completa en el paso 4 con el dominio del frontend |
+| `SESSION_COOKIE_SAME_SITE` | `none` |
+| `RESEND_API_KEY` | Clave privada de Resend, si habilitarás recuperación por correo |
+| `EMAIL_FROM` | Remitente permitido en Resend, si habilitarás recuperación por correo |
+| `PASSWORD_RESET_TOKEN_TTL_MINUTES` | `30` (opcional; este es el valor predeterminado) |
+
+Render proporciona `PORT` automáticamente; no lo agregues manualmente. Flyway aplicará las migraciones al iniciar. No configures `DEMO_PASSWORD` en producción.
+
+#### 3. Crear el frontend
+
+En Render selecciona **New > Static Site**, elige el mismo repositorio y rama. En la pantalla que muestras, completa:
+
+| Campo de Render | Valor |
+|---|---|
+| Name | `motoboutique-frontend` (o el nombre que prefieras) |
+| Branch | La misma rama del backend, por ejemplo `main` |
+| Root Directory | `frontend` |
+| Build Command | `npm ci && npm run build` |
+| Publish Directory | `dist` |
+
+En **Environment Variables**, agrega `VITE_API_BASE_URL` con la URL pública asignada al backend, por ejemplo `https://motoboutique-backend.onrender.com` (sin `/api` al final). No agregues `RESEND_API_KEY` ni contraseñas al frontend.
+
+En **Redirects/Rewrites** agrega una regla para que funcionen las rutas de React:
+
+| Source | Destination | Action |
+|---|---|---|
+| `/*` | `/index.html` | `Rewrite` |
+
+Luego crea el Static Site y copia su URL pública HTTPS.
+
+#### 4. Completar los dominios y redesplegar
+
+En las variables del backend, configura `CORS_ALLOWED_ORIGINS` y `FRONTEND_URL` con la URL HTTPS exacta del frontend, sin `/` al final (por ejemplo, `https://motoboutique-frontend.onrender.com`). Guarda y redespliega el backend. Confirma también que `VITE_API_BASE_URL` en el frontend sea la URL exacta del backend y vuelve a desplegar el frontend si la cambiaste.
+
+#### 5. Comprobar el despliegue
+
+Revisa los logs del backend: debe conectar con Supabase, completar Flyway y crear el administrador. Abre el frontend e inicia sesión con `ADMIN_EMAIL` y `ADMIN_PASSWORD`; después prueba una consulta y una operación protegida.
+
+Para recuperación de contraseña, crea/verifica un remitente en Resend y configura `RESEND_API_KEY` y `EMAIL_FROM` en el backend. Esta app envía correo mediante la API HTTPS de Resend: no necesita variables SMTP `SPRING_MAIL_*`. El remitente de prueba puede limitar los destinatarios permitidos. Nunca publiques la clave en Git ni en el frontend.
+
+### Opción B: usar el Blueprint
+
+En Render selecciona **New > Blueprint**, conecta el repositorio y acepta `render.yaml`. El Blueprint crea el backend y frontend. Completa las variables que Render solicite para el backend y el frontend con los mismos valores descritos arriba; cuando Render asigne las URLs, verifica `CORS_ALLOWED_ORIGINS`, `FRONTEND_URL` y `VITE_API_BASE_URL`.
 
 Para habilitar recuperación de contraseña configura también `RESEND_API_KEY` y `EMAIL_FROM` en el backend, con un remitente admitido por Resend. Mantén todas las credenciales solo en **Environment** del servicio privado en Render; no compartas ni subas `backend/.env`. El servicio gratuito de Render puede detenerse por inactividad, así que la primera solicitud puede tardar en responder.
 
@@ -150,7 +204,7 @@ El backend debe usar el rol PostgreSQL `postgres` (no `anon`, ni el usuario de l
 
 ## Publicar frontend y backend
 
-Lo más simple es servir ambos bajo el mismo dominio (por ejemplo un proxy inverso que reenvíe `/api` al backend). Si los publicas en dominios distintos, define `VITE_API_BASE_URL` al compilar el frontend, agrega su origen a `CORS_ALLOWED_ORIGINS` y usa `SESSION_COOKIE_SAME_SITE=none` (requiere HTTPS). Ten en cuenta que, entre dominios sin relación, el navegador no deja que el frontend lea la cookie del token CSRF; ver "Tareas pendientes" en `PROGRESS.md`.
+Lo más simple es servir ambos bajo el mismo dominio (por ejemplo un proxy inverso que reenvíe `/api` al backend). Si los publicas en dominios distintos, define `VITE_API_BASE_URL` al compilar el frontend, agrega su origen a `CORS_ALLOWED_ORIGINS` y usa `SESSION_COOKIE_SAME_SITE=none` (requiere HTTPS). La API expone el token CSRF en una cabecera CORS permitida para que el frontend pueda leerlo. Aun así, algunos navegadores bloquean cookies en solicitudes entre sitios; para mayor compatibilidad usa dominios propios bajo el mismo dominio base.
 
 ### Configurar el correo en Render
 
