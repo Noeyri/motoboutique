@@ -2,3 +2,9 @@
 .DS_Store
 Thumbs.db
 *.zip
+
+# Secretos locales: cada aplicación tiene su propio .env, nunca se suben.
+.env
+.env.*
+!.env.example
+*.log
