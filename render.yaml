@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: motoboutique-api
+    name: motoboutique-backend
     runtime: docker
     plan: free
     dockerfilePath: ./backend/Dockerfile
