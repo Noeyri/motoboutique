@@ -1,5 +1,40 @@
 # PROGRESS — Separación en backend y frontend
 
+## Estado actual (30-10-2026)
+
+> Las secciones siguientes son el historial de cada fase. Varios de sus "pendientes"
+> (roles y permisos, movimientos, kardex, compras, reportes, recuperación de contraseña)
+> ya están implementados. Esta sección es la referencia vigente.
+
+**Funciona (probado contra PostgreSQL local):** login por correo o nombre de usuario,
+usuarios, roles y permisos, configuración, aprobaciones, auditoría, catálogo (productos,
+categorías, marcas, modelos, compatibilidades, importación), motos, inventario (stock,
+entradas, salidas, transferencias, conteo físico, ajustes, kardex), compras (proveedores,
+órdenes, recepciones), dashboards de los cuatro roles, valorización y reportes con
+exportación CSV, XLSX y PDF. Las 40 rutas de lectura que usa el frontend responden 200.
+
+**Pruebas:** backend con 117 pruebas unitarias y de MVC en verde
+(`./mvnw test "-Dtest=*Test,!*PostgresTest" -Dsurefire.failIfNoSpecifiedTests=false`).
+Las `*PostgresTest` usan Testcontainers y necesitan Docker.
+
+**Pendientes reales:**
+1. **Ventas:** el paquete `ventas` está vacío. Hoy una venta se registra como salida de
+   inventario, sin cliente, comprobante ni precio de venta. Falta decidir el alcance.
+2. **Correo:** recuperar contraseña necesita `SMTP_HOST`, `SMTP_USER` y `SMTP_PASSWORD` en el `.env`.
+3. **Pruebas del frontend:** no hay; `npm test` solo revisa tipos.
+4. **Pruebas con PostgreSQL real** (`*PostgresTest`): ejecutarlas con Docker antes de cada
+   entrega. Los errores de tipado de parámetros nulos solo aparecen con PostgreSQL.
+5. **Contraseñas expuestas:** un `.env` con contraseñas se subió a `main` (commit `48a781b`) y
+   ya se quitó, pero sigue en el historial. Quien las use debe cambiarlas.
+
+**Reglas a recordar:**
+- `frontend/src/app/routes.ts` es a la vez el menú y la lista de rutas: quitar una entrada deja
+  la pantalla en 404. Para ocultarla solo del menú usa `enMenu: false`.
+- En consultas JPQL o nativas con parámetros opcionales, tipa el nulo (`cast(:x as String)`,
+  `cast(:x as timestamptz)`); PostgreSQL no puede deducir el tipo de un parámetro nulo.
+- El seeder da a ADMIN todos los permisos en cada arranque; a los demás roles solo les agrega
+  permisos nuevos, para respetar los que un administrador quitó.
+
 Fase: **separar el proyecto en dos aplicaciones independientes** sin perder lo existente.
 Origen: https://github.com/mateo-pc/motoboutique (rama `main`, último commit `d31b7ec`). No se crearon ramas ni commits.
 
