@@ -9,9 +9,8 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Fuerza la generación del token CSRF en cada petición para que la cookie XSRF-TOKEN llegue al
- * navegador (Spring solo la escribe cuando alguien lee el token). El frontend la lee y la envía
- * en la cabecera X-XSRF-TOKEN en todas las peticiones que modifican datos.
+ * Fuerza la generación del token CSRF en cada petición y lo expone en una cabecera para que un
+ * frontend alojado en otro origen pueda leerlo. El frontend lo reenvía en X-XSRF-TOKEN.
  */
 final class CsrfCookieFilter extends OncePerRequestFilter {
 
@@ -20,7 +19,7 @@ final class CsrfCookieFilter extends OncePerRequestFilter {
                                     FilterChain cadena) throws ServletException, IOException {
         CsrfToken token = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
         if (token != null) {
-            token.getToken();
+            response.setHeader("X-CSRF-TOKEN", token.getToken());
         }
         cadena.doFilter(request, response);
     }

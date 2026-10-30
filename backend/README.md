@@ -72,7 +72,7 @@ El remitente de pruebas de Resend puede enviar únicamente a destinatarios permi
 
 ### Configurar correo en Render
 
-No hay un Blueprint `render.yaml` en este repositorio. En el dashboard del servicio backend configura `SPRING_PROFILES_ACTIVE=prod`, `RESEND_API_KEY` como secreto, `EMAIL_FROM`, `FRONTEND_URL` con la URL pública del frontend y, si se cambia, `PASSWORD_RESET_TOKEN_TTL_MINUTES`. Configura también las variables existentes de PostgreSQL, `CORS_ALLOWED_ORIGINS` con el origen exacto del frontend y `SESSION_COOKIE_SAME_SITE` según el despliegue. Si frontend y API son servicios separados, configura `VITE_API_BASE_URL` con la URL del backend al compilar el frontend. Para producción, verifica el dominio del remitente en Resend y publica los registros DNS solicitados (SPF y DKIM).
+El despliegue completo está descrito en [`../README.md`](../README.md#desplegar-en-render) y automatizado con `../render.yaml`. En Render configura `RESEND_API_KEY` como secreto y `EMAIL_FROM` con un remitente admitido por Resend. Para producción, verifica el dominio del remitente y publica los registros DNS solicitados (SPF y DKIM). No copies la clave a ninguna variable `VITE_*`.
 
 ## API disponible en esta fase
 
@@ -90,7 +90,7 @@ No hay un Blueprint `render.yaml` en este repositorio. En el dashboard del servi
 | `/api/inventario/conteos` | Apertura, listado, actualización de conteos físicos y cierre |
 | `/api/inventario/ajustes`, `/api/aprobaciones` | Solicitudes, consulta y resolución individual o por lote de ajustes |
 
-Autenticación por sesión (cookie `JSESSIONID`). CSRF activo: la cookie `XSRF-TOKEN` debe reenviarse en la cabecera `X-XSRF-TOKEN` en todo POST/PUT/PATCH/DELETE. Los errores se devuelven como `ProblemDetail` (RFC 9457).
+Autenticación por sesión (cookie `JSESSIONID`). CSRF activo: el token de la cookie `XSRF-TOKEN` se reenvía en la cabecera `X-XSRF-TOKEN` en todo POST/PUT/PATCH/DELETE. La API también lo expone como `X-CSRF-TOKEN` para que un frontend en otro origen pueda leerlo; CORS solo permite los orígenes configurados. Los errores se devuelven como `ProblemDetail` (RFC 9457).
 
 ## Pruebas
 

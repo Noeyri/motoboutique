@@ -7,6 +7,8 @@ const BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
 
 const COOKIE_CSRF = 'XSRF-TOKEN'
 const CABECERA_CSRF = 'X-XSRF-TOKEN'
+const CABECERA_CSRF_RESPUESTA = 'X-CSRF-TOKEN'
+let tokenCsrfRemoto: string | null = null
 
 /** Error de la API con los datos del ProblemDetail ya normalizados. */
 export class ApiError extends Error {
@@ -30,11 +32,16 @@ export class ApiError extends Error {
 
 export function leerCookie(nombre: string): string | null {
   const par = document.cookie.split('; ').find((c) => c.startsWith(`${nombre}=`))
-  return par ? decodeURIComponent(par.slice(nombre.length + 1)) : null
+  if (par) return decodeURIComponent(par.slice(nombre.length + 1))
+  return nombre === COOKIE_CSRF ? tokenCsrfRemoto : null
 }
 
 export function hayTokenCsrf(): boolean {
   return leerCookie(COOKIE_CSRF) !== null
+}
+
+function actualizarTokenCsrf(respuesta: Response): void {
+  tokenCsrfRemoto = respuesta.headers.get(CABECERA_CSRF_RESPUESTA) ?? tokenCsrfRemoto
 }
 
 interface Opciones {
@@ -64,6 +71,7 @@ export async function apiBlob(ruta: string): Promise<Blob> {
       detail: 'No se pudo conectar con el servidor. Verifica que el backend esté en ejecución.',
     })
   }
+  actualizarTokenCsrf(respuesta)
   if (!respuesta.ok) {
     let problema: ProblemDetail | undefined
     try { problema = await respuesta.json() as ProblemDetail } catch { problema = undefined }
@@ -117,6 +125,7 @@ export async function apiFetch<T = void>(ruta: string, opciones: Opciones = {}):
       detail: 'No se pudo conectar con el servidor. Verifica que el backend esté en ejecución.',
     })
   }
+  actualizarTokenCsrf(respuesta)
 
   if (!respuesta.ok) {
     let problema: ProblemDetail | undefined
