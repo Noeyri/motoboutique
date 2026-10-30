@@ -14,6 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuditoriaService {
 
+    private static final Instant FECHA_MINIMA = Instant.parse("1970-01-01T00:00:00Z");
+    private static final Instant FECHA_MAXIMA = Instant.parse("9999-12-31T23:59:59Z");
+
     private final AuditoriaEventoRepository repository;
 
     @Transactional
@@ -37,8 +40,11 @@ public class AuditoriaService {
                     "La fecha desde no puede ser posterior a la fecha hasta.");
         }
         var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "fecha"));
+        // Sin filtro de fecha se usan límites amplios: PostgreSQL no puede tipar un Instant nulo
+        // en la consulta (llega como bytea).
         return PageResponse.de(repository.buscar(normalizar(q), normalizar(usuario),
-                normalizar(accion), desde, hasta, pageable), a ->
+                normalizar(accion), desde == null ? FECHA_MINIMA : desde,
+                hasta == null ? FECHA_MAXIMA : hasta, pageable), a ->
                 new AuditoriaDto(a.getActor(), a.getAccion(), a.getEntidad(), a.getEntidadId(),
                         a.getDetalle(), a.getFecha()));
     }

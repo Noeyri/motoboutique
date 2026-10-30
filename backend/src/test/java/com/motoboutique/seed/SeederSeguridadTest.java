@@ -2,6 +2,7 @@ package com.motoboutique.seed;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -10,6 +11,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.motoboutique.seguridad.dto.PermisoDto;
 import com.motoboutique.seguridad.dto.UsuarioCrearDto;
 import com.motoboutique.seguridad.service.PermisoService;
 import com.motoboutique.seguridad.service.RolService;
@@ -82,6 +84,25 @@ class SeederSeguridadTest {
         assertEquals(10, permisosPorRol.get("ALMACENERO"));
         assertEquals(6, permisosPorRol.get("CONTADOR"));
         assertEquals(2, permisosPorRol.get("CONSULTA"));
+    }
+
+    @Test
+    void agregaLosPermisosNuevosALosRolesExistentes() {
+        PermisoDto anterior = new PermisoDto();
+        anterior.setCodigo("PRODUCTO_VER");
+        when(permisoService.listar()).thenReturn(List.of(anterior));
+
+        seeder("Clave-Admin-1").ejecutar();
+
+        ArgumentCaptor<String> codigosRol = ArgumentCaptor.forClass(String.class);
+        verify(rolService, times(4)).agregarPermisos(codigosRol.capture(), permisosCaptor.capture());
+        Map<String, Collection<String>> agregadosPorRol = new HashMap<>();
+        for (int i = 0; i < codigosRol.getAllValues().size(); i++) {
+            agregadosPorRol.put(codigosRol.getAllValues().get(i), permisosCaptor.getAllValues().get(i));
+        }
+        assertEquals(21, agregadosPorRol.get("ADMIN").size());
+        assertEquals(List.of("INVENTARIO_VER"), agregadosPorRol.get("CONSULTA"));
+        assertFalse(agregadosPorRol.get("ALMACENERO").contains("PRODUCTO_VER"));
     }
 
     @Test

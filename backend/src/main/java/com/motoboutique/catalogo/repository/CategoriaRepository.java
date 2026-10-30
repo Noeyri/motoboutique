@@ -7,6 +7,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 public interface CategoriaRepository extends JpaRepository<Categoria, Long>, JpaSpecificationExecutor<Categoria> {
     Optional<Categoria> findByIdAndEliminadoFalse(Long id);
-    Optional<Categoria> findByNombreIgnoreCase(String nombre);
-    boolean existsByNombreIgnoreCase(String nombre);
+    Optional<Categoria> findByNombreIgnoreCaseAndEliminadoFalse(String nombre);
+    boolean existsByNombreIgnoreCaseAndEliminadoFalse(String nombre);
 }

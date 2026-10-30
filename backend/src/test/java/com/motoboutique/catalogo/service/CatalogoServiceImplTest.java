@@ -1,11 +1,17 @@
 package com.motoboutique.catalogo.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.motoboutique.catalogo.domain.Categoria;
+import com.motoboutique.catalogo.domain.Marca;
+import com.motoboutique.catalogo.dto.CategoriaDto;
 import com.motoboutique.catalogo.dto.CategoriaGuardarDto;
+import com.motoboutique.catalogo.dto.MarcaDto;
+import com.motoboutique.catalogo.dto.MarcaGuardarDto;
 import com.motoboutique.catalogo.dto.ProductoGuardarDto;
 import com.motoboutique.catalogo.repository.CategoriaRepository;
 import com.motoboutique.catalogo.repository.MarcaRepository;
@@ -35,10 +41,31 @@ class CatalogoServiceImplTest {
 
     @Test
     void rechazaCategoriaDuplicada() {
-        when(categorias.existsByNombreIgnoreCase("Motos")).thenReturn(true);
+        when(categorias.existsByNombreIgnoreCaseAndEliminadoFalse("Motos")).thenReturn(true);
 
         assertThrows(NegocioException.class,
                 () -> servicio.crearCategoria(new CategoriaGuardarDto("Motos", "", true)));
+    }
+
+    @Test
+    void permiteRecrearUnaCategoriaEliminada() {
+        // Solo se compara con categorías no eliminadas: una "Frenos" borrada no bloquea.
+        when(categorias.existsByNombreIgnoreCaseAndEliminadoFalse("Frenos")).thenReturn(false);
+        when(categorias.save(any(Categoria.class))).thenAnswer(invocacion -> invocacion.getArgument(0));
+
+        CategoriaDto creada = servicio.crearCategoria(new CategoriaGuardarDto(" Frenos ", "", true));
+
+        assertEquals("Frenos", creada.nombre());
+    }
+
+    @Test
+    void permiteRecrearUnaMarcaEliminada() {
+        when(marcas.existsByNombreIgnoreCaseAndEliminadoFalse("Brembo")).thenReturn(false);
+        when(marcas.save(any(Marca.class))).thenAnswer(invocacion -> invocacion.getArgument(0));
+
+        MarcaDto creada = servicio.crearMarca(new MarcaGuardarDto("Brembo", "", true));
+
+        assertEquals("Brembo", creada.nombre());
     }
 
     @Test

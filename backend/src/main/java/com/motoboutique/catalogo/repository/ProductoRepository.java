@@ -8,7 +8,6 @@ import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import java.math.BigDecimal;
 
 public interface ProductoRepository extends JpaRepository<Producto, Long>, JpaSpecificationExecutor<Producto> {
     java.util.List<Producto> findByActivoTrueAndEliminadoFalseOrderByNombreAsc();

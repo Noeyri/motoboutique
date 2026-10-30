@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { restablecerPassword, solicitarRecuperacion } from '../api/auth'
 import { ApiError, hayTokenCsrf } from '../api/client'
 import { consultarSesion } from '../api/auth'
-import { rutasPermitidas } from '../app/routes'
+import { Logo } from '../components/Logo'
 import { useAuth } from './AuthContext'
 
 const loginSchema = z.object({ email: z.string().min(1, 'Ingresa tu usuario o correo.'), password: z.string().min(1, 'Ingresa tu contraseña.') })
@@ -18,7 +18,7 @@ type EmailValues = z.infer<typeof emailSchema>
 type ResetValues = z.infer<typeof resetSchema>
 
 function AuthBrand() {
-  return <section className="auth-brand"><div className="brand"><span>MB</span><b>Moto Boutique</b></div>
+  return <section className="auth-brand"><div className="brand"><Logo /><b>Moto Boutique</b></div>
     <div className="auth-copy"><small>CONTROL TOTAL, DECISIONES CLARAS</small>
       <h1>Tu inventario,<br />siempre en marcha.</h1>
       <p>Gestiona repuestos, movimientos y finanzas desde un solo lugar seguro.</p></div>
@@ -27,23 +27,23 @@ function AuthBrand() {
 }
 
 export function LoginPage() {
-  const { usuario, login, tienePermiso } = useAuth()
+  const { usuario, login } = useAuth()
   const navigate = useNavigate()
   const location = useSearchParams()[0]
   const form = useForm<LoginValues>({ resolver: zodResolver(loginSchema) })
-  if (usuario) return <Navigate to={rutasPermitidas(tienePermiso)[0]?.path ?? '/403'} replace />
+  // "/" resuelve el dashboard que corresponde al rol (RedirectAfterLogin en App.tsx).
+  if (usuario) return <Navigate to="/" replace />
   const submit = form.handleSubmit(async ({ email, password }) => {
     try {
       await login(email, password)
-      const destino = rutasPermitidas(tienePermiso)[0]?.path ?? '/403'
-      navigate((location.get('next') || destino), { replace: true })
+      navigate((location.get('next') || '/'), { replace: true })
     } catch (error) {
       form.setError('root', { message: error instanceof ApiError ? error.detalle : 'No se pudo iniciar sesión.' })
     }
   })
   return <main className="auth" data-page="Auth"><AuthBrand />
     <section className="auth-form"><form className="login-card" onSubmit={(event) => void submit(event)}>
-    <div className="mobile-brand"><span>MB</span><b>Moto Boutique</b></div><small>BIENVENIDO DE NUEVO</small>
+    <div className="mobile-brand"><Logo /><b>Moto Boutique</b></div><small>BIENVENIDO DE NUEVO</small>
     <h2>Inicia sesión</h2><p>Ingresa tus credenciales para continuar.</p>
     <label>Usuario o correo corporativo<input autoComplete="username" {...form.register('email')} /></label>
     {form.formState.errors.email && <small role="alert">{form.formState.errors.email.message}</small>}

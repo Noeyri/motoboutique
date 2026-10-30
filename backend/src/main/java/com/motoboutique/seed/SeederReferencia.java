@@ -27,10 +27,10 @@ class SeederReferencia implements SeederFase {
         jdbc.update("INSERT INTO almacenes(codigo,nombre,direccion) VALUES ('ALM-PRINCIPAL','Principal','Almacén principal') ON CONFLICT(codigo) DO NOTHING");
         jdbc.update("INSERT INTO almacenes(codigo,nombre,direccion) VALUES ('ALM-NORTE','Norte','Almacén Norte') ON CONFLICT(codigo) DO NOTHING");
         for (String nombre : List.of("Protección","Lubricantes","Motor","Frenos","Transmisión","Eléctrico")) {
-            jdbc.update("INSERT INTO categorias(nombre) VALUES (?) ON CONFLICT(nombre) DO NOTHING", nombre);
+            asegurarCategoria(nombre);
         }
         for (String nombre : List.of("LS2","Motul","NGK","Brembo","DID","Yuasa","Yamaha","Honda","Suzuki")) {
-            jdbc.update("INSERT INTO marcas(nombre) VALUES (?) ON CONFLICT(nombre) DO NOTHING", nombre);
+            asegurarMarca(nombre);
         }
         crearModelo("Yamaha", "FZ-S", 149, "NAKED");
         crearModelo("Honda", "CB190R", 184, "NAKED");
@@ -83,15 +83,39 @@ class SeederReferencia implements SeederFase {
         return new ProductoRef(codigo,nombre,categoria,marca,new BigDecimal(compra),new BigDecimal(venta));
     }
 
+    /**
+     * Inserta la categoría solo si nunca existió una con ese nombre, ni siquiera eliminada:
+     * si un administrador la borró, el seeder no la vuelve a crear en cada arranque.
+     * No usa ON CONFLICT(nombre): desde V59 la unicidad es un índice parcial
+     * sobre lower(trim(nombre)) WHERE eliminado = false, que ON CONFLICT(nombre) no puede inferir.
+     */
+    private void asegurarCategoria(String nombre) {
+        jdbc.update("""
+            INSERT INTO categorias(nombre)
+            SELECT ? WHERE NOT EXISTS (
+                SELECT 1 FROM categorias WHERE lower(trim(nombre)) = lower(trim(?)))
+            """, nombre, nombre);
+    }
+
+    /** Igual que {@link #asegurarCategoria}; desde V60 marcas usa el mismo índice parcial. */
+    private void asegurarMarca(String nombre) {
+        jdbc.update("""
+            INSERT INTO marcas(nombre)
+            SELECT ? WHERE NOT EXISTS (
+                SELECT 1 FROM marcas WHERE lower(trim(nombre)) = lower(trim(?)))
+            """, nombre, nombre);
+    }
+
     private void crearModelo(String marca, String nombre, int cc, String tipo) {
-        jdbc.update("INSERT INTO modelos_moto(marca_id,nombre,cilindrada_cc,tipo) SELECT id,?,?,? FROM marcas WHERE nombre=? ON CONFLICT(marca_id,nombre) DO UPDATE SET cilindrada_cc=EXCLUDED.cilindrada_cc,tipo=EXCLUDED.tipo", nombre, cc, tipo, marca);
+        jdbc.update("INSERT INTO modelos_moto(marca_id,nombre,cilindrada_cc,tipo) SELECT id,?,?,? FROM marcas WHERE nombre=? AND eliminado=false ON CONFLICT(marca_id,nombre) DO UPDATE SET cilindrada_cc=EXCLUDED.cilindrada_cc,tipo=EXCLUDED.tipo", nombre, cc, tipo, marca);
     }
 
     private void crearProducto(ProductoRef p) {
         jdbc.update("""
             INSERT INTO productos(codigo,nombre,categoria_id,marca_id,precio_compra,precio_venta,stock_minimo,unidad,activo,especificaciones)
             SELECT ?, ?, c.id, m.id, ?, ?, 5, 'UNIDAD', true, '{}'::jsonb
-            FROM categorias c, marcas m WHERE c.nombre=? AND m.nombre=?
+            FROM categorias c, marcas m
+            WHERE c.nombre=? AND c.eliminado=false AND m.nombre=? AND m.eliminado=false
             ON CONFLICT(codigo) DO UPDATE SET nombre=EXCLUDED.nombre, precio_compra=EXCLUDED.precio_compra, precio_venta=EXCLUDED.precio_venta
             """, p.codigo(), p.nombre(), p.compra(), p.venta(), p.categoria(), p.marca());
         jdbc.update("INSERT INTO producto_compatibilidades(producto_id,modelo_moto_id) SELECT p.id, mm.id FROM productos p JOIN modelos_moto mm ON mm.nombre IN ('FZ-S','CB190R') WHERE p.codigo=? ON CONFLICT DO NOTHING", p.codigo());

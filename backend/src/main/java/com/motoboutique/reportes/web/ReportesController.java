@@ -53,8 +53,9 @@ public class ReportesController {
         if (!tienePermisoExportacion()) {
             throw new AccessDeniedException("Se requiere el permiso REPORTE_EXPORTAR.");
         }
-        ReporteDto reporte = service.generar(tipo, fechaCorte, almacenId, categoriaId,
-                productoId, desde, hasta, q, page, size);
+        // Se exportan todas las filas de los filtros, no solo la página que se ve en pantalla.
+        ReporteDto reporte = service.generarCompleto(tipo, fechaCorte, almacenId, categoriaId,
+                productoId, desde, hasta, q);
         MediaType mediaType = switch (extension) {
             case "csv" -> new MediaType("text", "csv", java.nio.charset.StandardCharsets.UTF_8);
             case "xlsx" -> MediaType.parseMediaType(

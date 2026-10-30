@@ -2,8 +2,6 @@ package com.motoboutique.seguridad.repository;
 
 import com.motoboutique.seguridad.domain.Usuario;
 import java.util.Optional;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;

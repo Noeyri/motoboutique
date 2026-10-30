@@ -6,6 +6,7 @@ import { useEstadoPersistente } from '../hooks/useEstadoPersistente'
 import { rutasPermitidas } from '../app/routes'
 import { useAuth } from '../auth/AuthContext'
 import { Icon } from '../components/Icon'
+import { Logo } from '../components/Logo'
 
 export interface AppShellContext {
   pageSize: number
@@ -26,28 +27,39 @@ export function AppShell() {
       filtros: {} as Record<string, string>,
     })
 
-  const nav = useMemo(
+  const permitidas = useMemo(
     () => rutasPermitidas(tienePermiso),
     [tienePermiso]
   )
 
+  const nav = useMemo(
+    () => permitidas.filter((item) => item.enMenu !== false),
+    [permitidas]
+  )
+
   const actual =
-    nav.find((item) => location.pathname === item.path) ?? nav[0]
+    permitidas.find((item) => location.pathname === item.path) ?? nav[0]
 
   const rolTexto = usuario?.roles.join(', ') ?? 'Usuario'
 
   const iconos: Record<string, string> = {
-    Dashboard: 'grid',
+    'Resumen general': 'grid',
     Usuarios: 'users',
     'Roles y permisos': 'shield',
     Configuración: 'settings',
+    Aprobaciones: 'check',
     Movimientos: 'move',
     Entradas: 'plus',
     Salidas: 'logout',
+    Transferencias: 'arrow',
     'Conteo físico': 'check',
     Ajustes: 'settings',
     Productos: 'box',
+    Motocicletas: 'bike',
     Importación: 'upload',
+    Proveedores: 'users',
+    Órdenes: 'cart',
+    Recepciones: 'file',
     Valorización: 'chart',
     Kardex: 'file',
     Reportes: 'chart',
@@ -56,6 +68,7 @@ export function AppShell() {
     Catálogo: 'file',
     'Resumen de almacén': 'box',
     'Resumen financiero': 'chart',
+    'Resumen de consulta': 'grid',
   }
 
   useEffect(() => {
@@ -109,7 +122,7 @@ export function AppShell() {
     <div className={`app ${preferencias.tema === 'dark' ? 'dark' : ''}`}>
       <aside className={sidebar ? 'sidebar open' : 'sidebar'}>
         <div className="brand">
-          <span>MB</span>
+          <Logo />
           <b>Moto Boutique</b>
         </div>
 

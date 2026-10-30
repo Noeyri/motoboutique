@@ -99,6 +99,14 @@ class ReportesAutorizacionTest {
                         .with(user("contador").roles("CONTADOR")
                                 .authorities(() -> "REPORTE_VER")))
                 .andExpect(status().isForbidden());
+        when(reportesService.generarCompleto(org.mockito.ArgumentMatchers.eq("valorizacion"),
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.isNull()))
+                .thenReturn(new ReporteDto("valorizacion", "Empresa", "20123456789",
+                        Instant.now(), List.of("Producto"),
+                        PageResponse.vacia(20), Map.of()));
         when(exportador.exportar(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq("csv")))
                 .thenReturn("csv".getBytes(java.nio.charset.StandardCharsets.UTF_8));
         mockMvc.perform(get("/api/reportes/valorizacion?formato=csv")

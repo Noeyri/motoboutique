@@ -87,6 +87,34 @@ class RolServiceImplTest {
     }
 
     @Test
+    void agregarPermisosSumaLosFaltantesSinQuitarNinguno() {
+        Rol existente = new Rol();
+        existente.setCodigo("ALMACENERO");
+        existente.getPermisos().add(permiso("PRODUCTO_VER"));
+        when(rolRepository.findByCodigo("ALMACENERO")).thenReturn(Optional.of(existente));
+        when(permisoRepository.findByCodigoIn(anyCollection()))
+                .thenReturn(List.of(permiso("STOCK_VER")));
+
+        servicio.agregarPermisos("ALMACENERO", List.of("PRODUCTO_VER", "STOCK_VER"));
+
+        verify(rolRepository).save(existente);
+        assertEquals(Set.of("PRODUCTO_VER", "STOCK_VER"), existente.getPermisos().stream()
+                .map(Permiso::getCodigo).collect(java.util.stream.Collectors.toSet()));
+    }
+
+    @Test
+    void agregarPermisosNoGuardaSiNoFaltaNinguno() {
+        Rol existente = new Rol();
+        existente.setCodigo("CONSULTA");
+        existente.getPermisos().add(permiso("PRODUCTO_VER"));
+        when(rolRepository.findByCodigo("CONSULTA")).thenReturn(Optional.of(existente));
+
+        servicio.agregarPermisos("CONSULTA", List.of("PRODUCTO_VER"));
+
+        verify(rolRepository, never()).save(any());
+    }
+
+    @Test
     void asegurarRechazaPermisosQueNoExisten() {
         when(permisoRepository.findByCodigoIn(anyCollection())).thenReturn(List.of());
 

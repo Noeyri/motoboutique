@@ -91,7 +91,7 @@ public class AdministracionInventarioService {
         if (cantidad == null || cantidad.signum() < 0 || cantidad.scale() > 3) {
             throw new NegocioException("La cantidad contada debe ser mayor o igual a cero y tener hasta tres decimales.");
         }
-        ConteoFisico conteo = obtenerConteoAbierto(id);
+        obtenerConteoAbierto(id);
         ConteoDetalle detalle = detalleRepository
                 .findByConteoIdAndProductoIdAndEliminadoFalse(id, productoId)
                 .orElseThrow(() -> new NegocioException("El producto no pertenece a este conteo."));
