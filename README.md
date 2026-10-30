@@ -204,7 +204,7 @@ El backend debe usar el rol PostgreSQL `postgres` (no `anon`, ni el usuario de l
 
 ## Publicar frontend y backend
 
-Lo más simple es servir ambos bajo el mismo dominio (por ejemplo un proxy inverso que reenvíe `/api` al backend). Si los publicas en dominios distintos, define `VITE_API_BASE_URL` al compilar el frontend, agrega su origen a `CORS_ALLOWED_ORIGINS` y usa `SESSION_COOKIE_SAME_SITE=none` (requiere HTTPS). La API expone el token CSRF en una cabecera CORS permitida para que el frontend pueda leerlo. Aun así, algunos navegadores bloquean cookies en solicitudes entre sitios; para mayor compatibilidad usa dominios propios bajo el mismo dominio base.
+Lo más simple es servir ambos bajo el mismo dominio (por ejemplo un proxy inverso que reenvíe `/api` al backend). Si los publicas en dominios distintos, define `VITE_API_BASE_URL` al compilar el frontend, agrega su origen a `CORS_ALLOWED_ORIGINS` y usa `SESSION_COOKIE_SAME_SITE=none` (requiere HTTPS). En producción el backend establece las cookies de sesión y CSRF como `SameSite=None; Secure`, y expone el token CSRF en una cabecera CORS permitida. Aun así, algunos navegadores bloquean cookies en solicitudes entre sitios; para mayor compatibilidad usa dominios propios bajo el mismo dominio base.
 
 ### Configurar el correo en Render
 
