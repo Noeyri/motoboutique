@@ -168,8 +168,7 @@ input[type=checkbox] { width:16px; height:16px; min-height:16px; padding:0; acce
 .tag-list > span { display:inline-flex; align-items:center; gap:8px; max-width:100%; padding:6px 9px; border:1px solid var(--border); border-radius:999px; background:var(--background); color:var(--text); font-size:12px; overflow-wrap:anywhere; }
 .tag-list button { padding:2px 4px; border:0; border-radius:4px; background:transparent; color:var(--link); font-size:11px; }
 .tag-list button:last-child { color:var(--danger); font-size:14px; font-weight:600; }
-.empty-state { margin:12px 0; padding:20px; border:1px dashed var(--border); border-radius:var(--radius); background:var(--background); color:var(--text-secondary); text-align:center; }
-.state-preview { grid-template-columns:minmax(0,1fr); }
+.empty-state { margin:12px 0; padding:20px; border:1px dashed var(--border); border-radius:var(--radius); background:var(--background); color:var(--text); text-align:center; }.state-preview { grid-template-columns:minmax(0,1fr); }
 .state-preview > div { width:100%; min-width:0; }
 select,input:not([type=checkbox]),textarea { font-size:12px; }
 .search input { border:0; background:transparent; padding:9px 0; }
