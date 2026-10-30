@@ -28,7 +28,7 @@ export function DashboardPage() {
   const data = query.data
   const kpis = data.kpis
   const items = Object.entries(kpis)
-  return <section>
+  return <section className="dashboard-page">
     <div className="metrics">{items.map(([clave, valor]) =>
       <Metric key={clave} label={etiqueta(clave)} value={typeof valor === 'number'
         ? valor.toLocaleString('es-PE', { maximumFractionDigits: 2 }) : String(valor)} icon={<span>↗</span>} />)}</div>

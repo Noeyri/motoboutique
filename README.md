@@ -14,7 +14,7 @@ Para el detalle de la arquitectura, los cambios, las pruebas y lo pendiente, lee
 - JDK 21
 - PostgreSQL 16 o superior
 - Node.js 20.19 o superior (o 22.12+) y npm
-- Git (en Windows, usar **Git Bash**)
+- Git (en Windows puedes usar PowerShell, CMD o Git Bash)
 
 ## Ejecutar en local
 
@@ -23,31 +23,24 @@ Necesitas dos terminales: una para el backend y otra para el frontend.
 ### 1. Backend (API en el puerto 8081)
 
 1. Crea en PostgreSQL una base de datos **vacía** llamada `motoboutique` (minúsculas, codificación UTF8).
-2. Entra a la carpeta y crea el archivo de entorno:
+2. Entra a `backend` y crea el archivo de entorno:
 
    ```bash
    cd backend
    cp .env.example .env
    ```
 
+   En PowerShell, usa `Copy-Item .env.example .env` en lugar de `cp`.
+
 3. Edita `.env` y completa al menos `DB_PASSWORD`, `ADMIN_PASSWORD` (8 caracteres o más, sin `\`) y, si quieres usuarios de prueba, `DEMO_PASSWORD`.
 4. Arranca:
 
    ```bash
+   # Git Bash
    ./mvnw spring-boot:run
    ```
 
-   En **PowerShell**, desde `C:\motoboutique\backend`, ejecuta:
-
-   ```powershell
-   .\mvnw.cmd spring-boot:run
-   ```
-
-   En **Símbolo del sistema (cmd.exe)**, desde esa misma carpeta, ejecuta:
-
-   ```bat
-   mvnw.cmd spring-boot:run
-   ```
+   En PowerShell o CMD, también desde `backend`, ejecuta `.\mvnw.cmd spring-boot:run`.
 
    Flyway crea las tablas y el `DataSeeder` carga permisos, roles base y usuarios. Se puede repetir sin duplicar datos.
 

@@ -16,18 +16,26 @@ API REST del sistema interno de **control de inventario** para una tienda de mot
 
 - JDK 21
 - PostgreSQL 16 o superior
-- Git (en Windows, usar **Git Bash**)
+- Git (en Windows puedes usar PowerShell, CMD o Git Bash)
 
 ## Puesta en marcha
 
-1. Clonar el repositorio y entrar a la carpeta del proyecto.
-2. Crear en PostgreSQL una base de datos **vacía** llamada `motoboutique` (todo en minúsculas, codificación UTF8).
-3. Copiar `.env.example` como `.env` y completar los valores (ver la tabla de abajo). El archivo `.env` **nunca se sube a Git**.
-4. Arrancar desde la raíz del proyecto (el `.env` se lee desde la carpeta actual):
+1. Clonar el repositorio y entrar a la carpeta `backend`:
 
    ```bash
+   cd backend
+   ```
+
+2. Crear en PostgreSQL una base de datos **vacía** llamada `motoboutique` (todo en minúsculas, codificación UTF8).
+3. Copiar `.env.example` como `.env` y completar los valores (ver la tabla de abajo). El archivo `.env` **nunca se sube a Git**. En PowerShell, usa `Copy-Item .env.example .env`; en CMD, `copy .env.example .env`.
+4. Arrancar desde `backend` (el `.env` se lee desde la carpeta actual):
+
+   ```bash
+   # Git Bash
    ./mvnw spring-boot:run
    ```
+
+   En PowerShell o CMD, ejecuta `.\mvnw.cmd spring-boot:run`.
 
 5. La API queda en <http://localhost:8081>. Para iniciar sesión usa el frontend (`../frontend`) con el correo `ADMIN_EMAIL` y la contraseña `ADMIN_PASSWORD` que pusiste en el `.env`.
 

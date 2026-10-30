@@ -78,7 +78,9 @@ export function DataTable<T extends { id: string | number }>({
           onChange={() => toggle(row.id)} aria-label={`Seleccionar fila ${row.id}`} /></td>
           {columnHeaders.map((column) => <td key={column.key}>{column.render ? column.render(row) : String(row[column.key as keyof T] ?? '')}</td>)}
         </tr>)}</tbody></table></div>}
-    <Pagination page={page} totalPages={totalPages} onPage={(next) => setParam('page', String(next))} />
-    <small className="table-total">{total} registros</small>
+    <div className="table-footer">
+      <small className="table-total">{total} {total === 1 ? 'registro' : 'registros'}</small>
+      <Pagination page={page} totalPages={totalPages} onPage={(next) => setParam('page', String(next))} />
+    </div>
   </div>
 }

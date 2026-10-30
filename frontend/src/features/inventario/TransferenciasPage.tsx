@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { useAuth } from '../../auth/AuthContext'
 import { catalogoApi } from '../../api/catalogo'
 import { ApiError } from '../../api/client'
 import { Badge } from '../../components/Badge'
@@ -15,6 +16,8 @@ interface LineaTransferencia { productoId: string; cantidad: string }
 
 export function TransferenciasPage() {
   const [params, setParams] = useSearchParams()
+  const { tienePermiso } = useAuth()
+  const puedeEditar = tienePermiso('TRANSFERENCIA_EDITAR')
   const [origen, setOrigen] = useState('')
   const [destino, setDestino] = useState('')
   const [observaciones, setObservaciones] = useState('')
@@ -27,6 +30,7 @@ export function TransferenciasPage() {
   const productos = useQuery({
     queryKey: ['productos-opciones', buscar],
     queryFn: () => catalogoApi.productos({ q: buscar || undefined, page: 0, size: 100, activo: true }),
+    enabled: puedeEditar,
   })
   const filtros = {
     estado: params.get('estado') ?? undefined,
@@ -77,28 +81,34 @@ export function TransferenciasPage() {
   })
   const canCreate = Boolean(origen && destino && origen !== destino && lineas.length > 0
     && lineas.every((linea) => linea.productoId && Number(linea.cantidad) > 0))
-  if (almacenes.isPending || productos.isPending || transferencias.isPending) return <Skeleton />
-  if (almacenes.isError || productos.isError || transferencias.isError) {
+  const almacenesDisponibles = almacenes.data
+  const productosDisponibles = productos.data
+  if (almacenes.isPending || transferencias.isPending || (puedeEditar && productos.isPending)) return <Skeleton />
+  if (almacenes.isError || transferencias.isError || (puedeEditar && productos.isError)) {
     const error = almacenes.error ?? productos.error ?? transferencias.error
     return <ErrorState mensaje={error instanceof ApiError ? error.detalle : 'No se pudieron cargar las transferencias.'}
-      reintentar={() => { void almacenes.refetch(); void productos.refetch(); void transferencias.refetch() }} />
+      reintentar={() => {
+        void almacenes.refetch()
+        if (puedeEditar) void productos.refetch()
+        void transferencias.refetch()
+      }} />
   }
   const pagina = transferencias.data
-  return <section className="settings-grid">
-    <form className="card form-card" onSubmit={(event) => { event.preventDefault(); if (canCreate) crear.mutate() }}>
+  return <section className={puedeEditar ? 'settings-grid transferencias-page' : 'transferencias-page'}>
+    {puedeEditar && almacenesDisponibles && productosDisponibles && <form className="card form-card" onSubmit={(event) => { event.preventDefault(); if (canCreate) crear.mutate() }}>
       <h3>Nueva transferencia</h3>
       <label>Almacén de origen<select required value={origen} onChange={(event) => setOrigen(event.target.value)}>
-        <option value="">Selecciona origen</option>{almacenes.data.filter((a) => a.activo).map((a) =>
+        <option value="">Selecciona origen</option>{almacenesDisponibles.filter((a) => a.activo).map((a) =>
           <option value={a.id} key={a.id}>{a.nombre}</option>)}</select></label>
       <label>Almacén de destino<select required value={destino} onChange={(event) => setDestino(event.target.value)}>
-        <option value="">Selecciona destino</option>{almacenes.data.filter((a) => a.activo && String(a.id) !== origen).map((a) =>
+        <option value="">Selecciona destino</option>{almacenesDisponibles.filter((a) => a.activo && String(a.id) !== origen).map((a) =>
           <option value={a.id} key={a.id}>{a.nombre}</option>)}</select></label>
       {origen && destino && origen === destino && <small role="alert">El origen y el destino deben ser distintos.</small>}
       <label>Buscar producto<SearchInput value={buscar} onChange={setBuscar} placeholder="Código o nombre..." /></label>
       {lineas.map((linea, index) => <div className="form-grid" key={index}>
         <label>Producto<select required value={linea.productoId} onChange={(event) => setLineas((actuales) =>
           actuales.map((item, i) => i === index ? { ...item, productoId: event.target.value } : item))}>
-          <option value="">Selecciona producto</option>{productos.data.contenido.map((producto) =>
+          <option value="">Selecciona producto</option>{productosDisponibles.contenido.map((producto) =>
             <option key={producto.id} value={producto.id}>{producto.codigo} · {producto.nombre}</option>)}</select></label>
         <label>Cantidad<input type="number" min="0.001" step="0.001" required value={linea.cantidad}
           onChange={(event) => setLineas((actuales) => actuales.map((item, i) =>
@@ -110,7 +120,7 @@ export function TransferenciasPage() {
         [...actuales, { productoId: '', cantidad: '' }])}>Agregar producto</button>
       <label>Observaciones<textarea maxLength={2000} value={observaciones} onChange={(event) => setObservaciones(event.target.value)} /></label>
       <button className="btn primary" disabled={!canCreate || crear.isPending}>{crear.isPending ? 'Guardando…' : 'Crear pendiente'}</button>
-    </form>
+    </form>}
     <section className="card">
       <div className="section-title"><h3>Transferencias</h3></div>
       <div className="filter-bar">
@@ -118,7 +128,7 @@ export function TransferenciasPage() {
           <option value="">Todos los estados</option>{['PENDIENTE', 'EN_TRANSITO', 'COMPLETADA', 'CANCELADA'].map((estado) =>
             <option key={estado}>{estado}</option>)}</select>
         <select aria-label="Filtrar por almacén" value={params.get('almacenId') ?? ''} onChange={(event) => cambiar('almacenId', event.target.value)}>
-          <option value="">Todos los almacenes</option>{almacenes.data.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+          <option value="">Todos los almacenes</option>{(almacenesDisponibles ?? []).map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
         </select>
         <label>Desde<input type="date" value={params.get('desde') ?? ''} onChange={(event) => cambiar('desde', event.target.value)} /></label>
         <label>Hasta<input type="date" value={params.get('hasta') ?? ''} onChange={(event) => cambiar('hasta', event.target.value)} /></label>
@@ -130,10 +140,10 @@ export function TransferenciasPage() {
             <td>{transferencia.almacenOrigen}</td><td>{transferencia.almacenDestino}</td>
             <td>{transferencia.detalles.map((detalle) => `${detalle.codigo}: ${detalle.cantidad}`).join(', ')}</td>
             <td><Badge>{transferencia.estado}</Badge></td><td className="user-actions">
-              {transferencia.estado === 'PENDIENTE' && <>
+              {puedeEditar && transferencia.estado === 'PENDIENTE' && <>
                 <button className="btn primary" disabled={accion.isPending} onClick={() => accion.mutate({ id: transferencia.id, tipo: 'despachar' })}>Despachar</button>
                 <button className="btn danger" disabled={accion.isPending} onClick={() => accion.mutate({ id: transferencia.id, tipo: 'cancelar' })}>Cancelar</button></>}
-              {transferencia.estado === 'EN_TRANSITO' &&
+              {puedeEditar && transferencia.estado === 'EN_TRANSITO' &&
                 <button className="btn primary" disabled={accion.isPending} onClick={() => accion.mutate({ id: transferencia.id, tipo: 'recibir' })}>Recibir</button>}
             </td></tr>)}</tbody></table></div>}
       <Pagination page={pagina.numero} totalPages={pagina.totalPaginas} onPage={(siguiente) =>
