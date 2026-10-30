@@ -106,10 +106,10 @@ El repositorio incluye [`render.yaml`](render.yaml), que crea el backend como se
    | `RESEND_API_KEY` | Clave privada de Resend (solo si habilitarás recuperación por correo) |
    | `EMAIL_FROM` | Remitente permitido en Resend (solo si habilitarás recuperación por correo) |
 
-   `SPRING_PROFILES_ACTIVE=prod`, `SESSION_COOKIE_SAME_SITE=none` y `PASSWORD_RESET_TOKEN_TTL_MINUTES=30` ya quedan declaradas en el Blueprint. Para recuperación por correo, crea/verifica el remitente en Resend y define `RESEND_API_KEY` y `EMAIL_FROM`; sin estas variables, el resto del sistema funciona pero el envío de correos no. No configures `DEMO_PASSWORD`: en producción no se crean usuarios demo. Flyway aplicará las migraciones al arrancar.
+   `SPRING_PROFILES_ACTIVE=prod`, `SESSION_COOKIE_SAME_SITE=none` y `PASSWORD_RESET_TOKEN_TTL_MINUTES=30` ya quedan declaradas en el Blueprint. Los seeders están desactivados por defecto para evitar que un reinicio restaure datos borrados. En una base nueva, agrega temporalmente `APP_SEED_ENABLED=true` para crear roles, permisos y el administrador; después del primer arranque, elimina esa variable o cámbiala a `false`. No configures `DEMO_PASSWORD`: en producción no se crean usuarios demo. Flyway aplicará las migraciones al arrancar.
 4. **Completa la variable de `motoboutique-frontend`:** `VITE_API_BASE_URL` debe ser la URL pública del backend, por ejemplo `https://motoboutique-api.onrender.com` (sin `/api` al final). Las variables `VITE_*` se incorporan al compilar: si las cambias, vuelve a desplegar el frontend.
 5. **Verifica los dominios reales.** Si Render asignó nombres distintos, actualiza `CORS_ALLOWED_ORIGINS` y `FRONTEND_URL` en el backend con el origen exacto del frontend, y `VITE_API_BASE_URL` en el frontend con la URL del backend. Guarda los cambios y espera a que ambos servicios terminen el despliegue.
-6. **Comprueba los logs del backend.** Confirma que conectó con PostgreSQL, que Flyway terminó sin errores y que creó el administrador. Luego abre la URL del frontend e inicia sesión con `ADMIN_EMAIL` y `ADMIN_PASSWORD`.
+6. **Comprueba los logs del backend.** Confirma que conectó con PostgreSQL y que Flyway terminó sin errores. Si es la primera instalación, confirma también que creó el administrador antes de desactivar `APP_SEED_ENABLED`. Luego abre la URL del frontend e inicia sesión con `ADMIN_EMAIL` y `ADMIN_PASSWORD`.
 7. **Prueba la sesión y una operación protegida.** La API usa cookies de sesión y CSRF. El frontend debe enviar credenciales; la API expone el token CSRF en una cabecera para que funcione entre los dos dominios de Render. No pongas contraseñas ni claves en variables `VITE_*`.
 
 Para habilitar recuperación de contraseña configura también `RESEND_API_KEY` y `EMAIL_FROM` en el backend, con un remitente admitido por Resend. Mantén todas las credenciales solo en **Environment** del servicio privado en Render; no compartas ni subas `backend/.env`. El servicio gratuito de Render puede detenerse por inactividad, así que la primera solicitud puede tardar en responder.
@@ -132,7 +132,7 @@ Supabase proporciona PostgreSQL compatible con el backend. Para usarla como base
    DB_PASSWORD=TU_CONTRASENA
    ```
 
-4. Arranca el backend. Flyway crea o actualiza las tablas automáticamente, incluida `estado_aplicacion` para los datos editables del frontend.
+4. Arranca el backend. Flyway crea o actualiza las tablas automáticamente, incluida `estado_aplicacion` para los datos editables del frontend. Los seeders están desactivados por defecto; si necesitas crear los roles y el administrador en una base nueva, habilita temporalmente `APP_SEED_ENABLED=true` y desactívalo después del primer arranque.
 5. Si la contraseña contiene caracteres especiales, usa su codificación URL cuando corresponda.
 6. Para producción configura también el host permitido del frontend:
 

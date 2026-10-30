@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Ejecuta, al arrancar la aplicación, todas las fases de datos iniciales en su orden.
- * Se puede apagar con la propiedad app.seed.enabled=false.
+ * Solo se ejecuta cuando app.seed.enabled=true.
  */
 @Slf4j
 @Component
@@ -18,7 +18,7 @@ public class DataSeeder implements ApplicationRunner {
     private final List<SeederFase> fases;
     private final boolean habilitado;
 
-    public DataSeeder(List<SeederFase> fases, @Value("${app.seed.enabled:true}") boolean habilitado) {
+    public DataSeeder(List<SeederFase> fases, @Value("${app.seed.enabled:false}") boolean habilitado) {
         this.fases = fases;
         this.habilitado = habilitado;
     }
