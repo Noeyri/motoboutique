@@ -17,14 +17,13 @@ entrada, salida (y rechazo sin stock), orden de compra con recepción parcial y 
 transferencia entre almacenes, conteo físico, ajuste manual, aprobación y rechazo, y los
 permisos de cada rol (consulta, contador, almacenero y admin).
 
-**Pruebas:** backend con 119 pruebas unitarias y de MVC en verde
-(`./mvnw test "-Dtest=*Test,!*PostgresTest" -Dsurefire.failIfNoSpecifiedTests=false`).
-Las `*PostgresTest` usan Testcontainers y necesitan Docker.
+**Pruebas:** backend con 138 pruebas unitarias y de MVC en verde (`./mvnw test`);
+4 pruebas de PostgreSQL con Testcontainers se omiten cuando Docker no está disponible.
 
 **Pendientes reales:**
 1. **Ventas:** el paquete `ventas` está vacío. Hoy una venta se registra como salida de
    inventario, sin cliente, comprobante ni precio de venta. Falta decidir el alcance.
-2. **Correo:** recuperar contraseña necesita `SMTP_HOST`, `SMTP_USER` y `SMTP_PASSWORD` en el `.env`.
+2. **Correo:** la recuperación usa Resend por HTTPS; local y Render requieren configurar `RESEND_API_KEY` y `EMAIL_FROM`.
 3. **Pruebas del frontend:** no hay; `npm test` solo revisa tipos.
 4. **Pruebas con PostgreSQL real** (`*PostgresTest`): ejecutarlas con Docker antes de cada
    entrega. Los errores de tipado de parámetros nulos solo aparecen con PostgreSQL.

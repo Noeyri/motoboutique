@@ -39,6 +39,8 @@ export function hayTokenCsrf(): boolean {
 
 interface Opciones {
   method?: string
+  /** Evita el evento global al consultar la sesión en pantallas públicas, donde 401 es normal. */
+  notificarNoAutorizado?: boolean
   /** Cuerpo JSON (se serializa). */
   json?: unknown
   /** Cuerpo de formulario (application/x-www-form-urlencoded). */
@@ -124,7 +126,7 @@ export async function apiFetch<T = void>(ruta: string, opciones: Opciones = {}):
       problema = undefined
     }
     const error = new ApiError(respuesta.status, problema)
-    if (respuesta.status === 401) {
+    if (respuesta.status === 401 && opciones.notificarNoAutorizado !== false) {
       window.dispatchEvent(new Event('api:unauthorized'))
     } else if (respuesta.status === 403) {
       toast.error('No tienes permiso para realizar esta acción.')

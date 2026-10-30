@@ -52,12 +52,27 @@ Al arrancar, Flyway crea las tablas y el `DataSeeder` carga los permisos, los ro
 | `DEMO_PASSWORD` | Contraseña común de los usuarios demo (solo perfil `dev`; si queda vacía no se crean) |
 | `CORS_ALLOWED_ORIGINS` | Orígenes del frontend autorizados, separados por coma (por defecto `http://localhost:5173`) |
 | `SESSION_COOKIE_SAME_SITE` | Solo perfil `prod`: `lax` (por defecto) o `none` si frontend y API están en sitios distintos |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | Servidor de correo para recuperación de contraseña en producción |
-| `SMTP_AUTH`, `SMTP_STARTTLS` | Autenticación SMTP y STARTTLS (por defecto `true`) |
+| `RESEND_API_KEY` | Clave privada de la API de Resend; se usa desde el backend |
+| `EMAIL_FROM` | Remitente admitido/verificado por Resend (el de prueba puede limitar destinatarios) |
 | `FRONTEND_URL` | URL base del frontend para construir el enlace de recuperación |
+| `PASSWORD_RESET_TOKEN_TTL_MINUTES` | Duración del enlace en minutos (opcional; 30 por defecto) |
 
 Usuarios demo (perfil `dev`): `almacenero@`, `contador@` y `consulta@` con el dominio `motoboutique.local`.
-En perfil `dev`, el enlace de recuperación se escribe en el log; fuera de `dev`, se envía al correo con SMTP.
+La recuperación envía correo por la API HTTPS de Resend en todos los perfiles; el enlace y el token no se escriben en logs. Si Resend falla, la solicitud devuelve HTTP 503 con un mensaje sin detalles del proveedor.
+Esta respuesta explícita ante fallos es una decisión operativa: como la dirección se busca antes de enviar, un 503 durante un fallo de Resend puede distinguir una cuenta existente de una inexistente. Para evitar esa enumeración se necesitaría una política diferente, por ejemplo procesar el envío de forma asíncrona con una cola/outbox.
+
+### Configurar correo en desarrollo local
+
+1. Desde `backend`, copia `.env.example` a `.env` (en PowerShell: `Copy-Item .env.example .env`).
+2. Completa `RESEND_API_KEY` con una clave privada de Resend y deja `EMAIL_FROM=onboarding@resend.dev` para pruebas o usa un remitente verificado. Configura `FRONTEND_URL=http://localhost:5173` y, si quieres, `PASSWORD_RESET_TOKEN_TTL_MINUTES=30`.
+3. Arranca el backend desde `backend` con `.\mvnw.cmd spring-boot:run` y el frontend desde `frontend` con `npm run dev`.
+4. En `/login`, usa “¿Olvidaste tu contraseña?”, solicita el enlace, abre el correo recibido y define la nueva contraseña en el frontend. Verifica que puedes iniciar sesión con la contraseña nueva y que un enlace ya usado no se pueda reutilizar.
+
+El remitente de pruebas de Resend puede enviar únicamente a destinatarios permitidos por Resend. No copies la clave a `frontend/.env` ni uses una variable `VITE_*`.
+
+### Configurar correo en Render
+
+No hay un Blueprint `render.yaml` en este repositorio. En el dashboard del servicio backend configura `SPRING_PROFILES_ACTIVE=prod`, `RESEND_API_KEY` como secreto, `EMAIL_FROM`, `FRONTEND_URL` con la URL pública del frontend y, si se cambia, `PASSWORD_RESET_TOKEN_TTL_MINUTES`. Configura también las variables existentes de PostgreSQL, `CORS_ALLOWED_ORIGINS` con el origen exacto del frontend y `SESSION_COOKIE_SAME_SITE` según el despliegue. Si frontend y API son servicios separados, configura `VITE_API_BASE_URL` con la URL del backend al compilar el frontend. Para producción, verifica el dominio del remitente en Resend y publica los registros DNS solicitados (SPF y DKIM).
 
 ## API disponible en esta fase
 
