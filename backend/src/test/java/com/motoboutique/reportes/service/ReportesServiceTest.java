@@ -47,8 +47,9 @@ class ReportesServiceTest {
         when(configuracionRepository.findById((short) 1)).thenReturn(Optional.empty());
         when(inventarioService.listarMovimientos(isNull(), isNull(), isNull(), isNull(), isNull(),
                 isNull(), anyInt(), eq(100), eq("fecha"), eq("desc")))
-                .thenReturn(pagina(0, 100, "ENTRADA"), pagina(1, 100, "SALIDA"),
-                        pagina(2, 50, "ENTRADA"));
+                .thenReturn(pagina(0, 100, "ENTRADA"))
+                .thenReturn(pagina(1, 100, "SALIDA"))
+                .thenReturn(pagina(2, 50, "ENTRADA"));
 
         ReporteDto reporte = service.generarCompleto("movimientos-por-periodo", null, null, null,
                 null, null, null, null);

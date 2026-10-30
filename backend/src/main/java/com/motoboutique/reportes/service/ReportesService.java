@@ -212,11 +212,6 @@ public class ReportesService {
     }
 
     private Datos datos(List<String> columnas, List<List<String>> filas, int page, int size,
-                        Map<String, String> totales) {
-        return datos(columnas, filas, page, size, totales, filas.size());
-    }
-
-    private Datos datos(List<String> columnas, List<List<String>> filas, int page, int size,
                         Map<String, String> totales, long total) {
         return new Datos(columnas, total, paginas(total, size), page, size, filas, totales);
     }
