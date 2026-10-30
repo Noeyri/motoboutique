@@ -90,7 +90,7 @@ El despliegue completo está descrito en [`../README.md`](../README.md#desplegar
 | `/api/inventario/conteos` | Apertura, listado, actualización de conteos físicos y cierre |
 | `/api/inventario/ajustes`, `/api/aprobaciones` | Solicitudes, consulta y resolución individual o por lote de ajustes |
 
-Autenticación por sesión (cookie `JSESSIONID`). CSRF activo: el token de la cookie `XSRF-TOKEN` se reenvía en la cabecera `X-XSRF-TOKEN` en todo POST/PUT/PATCH/DELETE. La API también lo expone como `X-CSRF-TOKEN` para que un frontend en otro origen pueda leerlo; CORS solo permite los orígenes configurados. Los errores se devuelven como `ProblemDetail` (RFC 9457).
+Autenticación por sesión (cookie `JSESSIONID`). CSRF activo: el token de la cookie `XSRF-TOKEN` se reenvía en la cabecera `X-XSRF-TOKEN` en todo POST/PUT/PATCH/DELETE. La API también lo expone como `X-CSRF-TOKEN` para que un frontend en otro origen pueda leerlo; CORS solo permite los orígenes configurados. Con `server.servlet.session.cookie.secure=true`, ambas cookies se sirven como `SameSite=None; Secure` para admitir solicitudes entre orígenes HTTPS. Los errores se devuelven como `ProblemDetail` (RFC 9457).
 
 ## Pruebas
 

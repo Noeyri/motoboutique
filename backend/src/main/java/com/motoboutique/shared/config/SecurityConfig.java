@@ -2,6 +2,9 @@ package com.motoboutique.shared.config;
 
 import java.util.Arrays;
 import java.util.List;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
+import org.springframework.boot.web.server.servlet.ConfigurableServletWebServerFactory;
+import org.springframework.boot.web.server.servlet.CookieSameSiteSupplier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -55,6 +58,18 @@ public class SecurityConfig {
             repositorio.setCookieCustomizer(cookie -> cookie.sameSite("None").secure(true));
         }
         return repositorio;
+    }
+
+    @Bean
+    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> cookiesSameSite(
+            @Value("${server.servlet.session.cookie.secure:false}") boolean cookiesSeguras) {
+        return fabrica -> {
+            if (cookiesSeguras) {
+                fabrica.addCookieSameSiteSuppliers(
+                        CookieSameSiteSupplier.ofNone().whenHasName("XSRF-TOKEN"),
+                        CookieSameSiteSupplier.ofNone().whenHasName("JSESSIONID"));
+            }
+        };
     }
 
     @Bean
