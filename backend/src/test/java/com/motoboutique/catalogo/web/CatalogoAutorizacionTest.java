@@ -3,6 +3,7 @@ package com.motoboutique.catalogo.web;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 
 import com.motoboutique.catalogo.service.CatalogoService;
 import com.motoboutique.catalogo.service.ImportacionCatalogoService;
@@ -47,8 +48,11 @@ class CatalogoAutorizacionTest {
 
     @Test
     void sesionAusenteRecibe401() throws Exception {
-        mockMvc.perform(get("/api/catalogo/categorias"))
-                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/catalogo/categorias")
+                        .header("Origin", "http://localhost:5173"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().exists("X-CSRF-TOKEN"))
+                .andExpect(header().string("Access-Control-Expose-Headers", "X-CSRF-TOKEN"));
     }
 
     @Test
