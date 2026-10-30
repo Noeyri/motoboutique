@@ -66,11 +66,11 @@ class CatalogoServiceImpl implements CatalogoService {
     }
 
     @Override @Transactional public CategoriaDto crearCategoria(CategoriaGuardarDto d) { return categoriaDto(categorias.save(aplicarCategoria(new Categoria(), d))); }
-    @Override @Transactional public CategoriaDto actualizarCategoria(Long id, CategoriaGuardarDto d) { Categoria c = categoria(id); categorias.findByNombreIgnoreCase(d.nombre().trim()).filter(x -> !x.getId().equals(id)).ifPresent(x -> { throw nuevoCodigo("Ya existe una categoría con ese nombre."); }); return categoriaDto(categorias.save(aplicarCategoria(c, d))); }
+    @Override @Transactional public CategoriaDto actualizarCategoria(Long id, CategoriaGuardarDto d) { Categoria c = categoria(id); categorias.findByNombreIgnoreCaseAndEliminadoFalse(d.nombre().trim()).filter(x -> !x.getId().equals(id)).ifPresent(x -> { throw nuevoCodigo("Ya existe una categoría con ese nombre."); }); return categoriaDto(categorias.save(aplicarCategoria(c, d))); }
     @Override @Transactional public void eliminarCategoria(Long id) { Categoria c = categoria(id); if (productos.countByCategoriaIdAndActivoTrueAndEliminadoFalse(id) > 0) throw new NegocioException("No se puede eliminar una categoría con productos activos."); c.marcarEliminado(); }
 
     private Categoria categoria(Long id) { return categorias.findByIdAndEliminadoFalse(id).orElseThrow(() -> RecursoNoEncontradoException.de("Categoría", id)); }
-    private Categoria aplicarCategoria(Categoria c, CategoriaGuardarDto d) { String nombre = d.nombre().trim(); if (categorias.existsByNombreIgnoreCase(nombre) && !nombre.equalsIgnoreCase(c.getNombre())) throw nuevoCodigo("Ya existe una categoría con ese nombre."); c.setNombre(nombre); c.setDescripcion(d.descripcion()); c.setActivo(d.activo() == null || d.activo()); return c; }
+    private Categoria aplicarCategoria(Categoria c, CategoriaGuardarDto d) { String nombre = d.nombre().trim(); if (categorias.existsByNombreIgnoreCaseAndEliminadoFalse(nombre) && !nombre.equalsIgnoreCase(c.getNombre())) throw nuevoCodigo("Ya existe una categoría con ese nombre."); c.setNombre(nombre); c.setDescripcion(d.descripcion()); c.setActivo(d.activo() == null || d.activo()); return c; }
     private CategoriaDto categoriaDto(Categoria c) { return new CategoriaDto(c.getId(), c.getNombre(), c.getDescripcion(), c.isActivo()); }
 
     @Override public PageResponse<MarcaDto> listarMarcas(String q, Boolean activo, Pageable pageable) {
@@ -80,10 +80,10 @@ class CatalogoServiceImpl implements CatalogoService {
         return PageResponse.de(marcas.findAll(spec, pageable), this::marcaDto);
     }
     @Override @Transactional public MarcaDto crearMarca(MarcaGuardarDto d) { return marcaDto(marcas.save(aplicarMarca(new Marca(), d))); }
-    @Override @Transactional public MarcaDto actualizarMarca(Long id, MarcaGuardarDto d) { Marca m = marca(id); marcas.findByNombreIgnoreCase(d.nombre().trim()).filter(x -> !x.getId().equals(id)).ifPresent(x -> { throw nuevoCodigo("Ya existe una marca con ese nombre."); }); return marcaDto(marcas.save(aplicarMarca(m, d))); }
+    @Override @Transactional public MarcaDto actualizarMarca(Long id, MarcaGuardarDto d) { Marca m = marca(id); marcas.findByNombreIgnoreCaseAndEliminadoFalse(d.nombre().trim()).filter(x -> !x.getId().equals(id)).ifPresent(x -> { throw nuevoCodigo("Ya existe una marca con ese nombre."); }); return marcaDto(marcas.save(aplicarMarca(m, d))); }
     @Override @Transactional public void eliminarMarca(Long id) { Marca m = marca(id); if (productos.countByMarcaIdAndActivoTrueAndEliminadoFalse(id) > 0) throw new NegocioException("No se puede eliminar una marca con productos activos."); m.marcarEliminado(); }
     private Marca marca(Long id) { return marcas.findByIdAndEliminadoFalse(id).orElseThrow(() -> RecursoNoEncontradoException.de("Marca", id)); }
-    private Marca aplicarMarca(Marca m, MarcaGuardarDto d) { String nombre = d.nombre().trim(); if (marcas.existsByNombreIgnoreCase(nombre) && !nombre.equalsIgnoreCase(m.getNombre())) throw nuevoCodigo("Ya existe una marca con ese nombre."); m.setNombre(nombre); m.setDescripcion(d.descripcion()); m.setActivo(d.activo() == null || d.activo()); return m; }
+    private Marca aplicarMarca(Marca m, MarcaGuardarDto d) { String nombre = d.nombre().trim(); if (marcas.existsByNombreIgnoreCaseAndEliminadoFalse(nombre) && !nombre.equalsIgnoreCase(m.getNombre())) throw nuevoCodigo("Ya existe una marca con ese nombre."); m.setNombre(nombre); m.setDescripcion(d.descripcion()); m.setActivo(d.activo() == null || d.activo()); return m; }
     private MarcaDto marcaDto(Marca m) { return new MarcaDto(m.getId(), m.getNombre(), m.getDescripcion(), m.isActivo()); }
 
     @Override public PageResponse<ProductoDto> listarProductos(String q, Long categoriaId, Long marcaId, Boolean activo, Boolean stockBajo, Long modeloMotoId, Pageable pageable) {

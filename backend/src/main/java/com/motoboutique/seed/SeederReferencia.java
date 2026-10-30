@@ -84,7 +84,8 @@ class SeederReferencia implements SeederFase {
     }
 
     /**
-     * Inserta la categoría solo si no existe una activa con ese nombre.
+     * Inserta la categoría solo si nunca existió una con ese nombre, ni siquiera eliminada:
+     * si un administrador la borró, el seeder no la vuelve a crear en cada arranque.
      * No usa ON CONFLICT(nombre): desde V59 la unicidad es un índice parcial
      * sobre lower(trim(nombre)) WHERE eliminado = false, que ON CONFLICT(nombre) no puede inferir.
      */
@@ -92,26 +93,21 @@ class SeederReferencia implements SeederFase {
         jdbc.update("""
             INSERT INTO categorias(nombre)
             SELECT ? WHERE NOT EXISTS (
-                SELECT 1 FROM categorias
-                WHERE lower(trim(nombre)) = lower(trim(?)) AND eliminado = false)
+                SELECT 1 FROM categorias WHERE lower(trim(nombre)) = lower(trim(?)))
             """, nombre, nombre);
     }
 
-    /**
-     * marcas conserva UNIQUE(nombre) completo (uq_marcas_nombre), a diferencia de categorias.
-     * Si la marca existe pero fue borrada o desactivada, se reactiva para que los productos
-     * de referencia puedan enlazarse a ella.
-     */
+    /** Igual que {@link #asegurarCategoria}; desde V60 marcas usa el mismo índice parcial. */
     private void asegurarMarca(String nombre) {
         jdbc.update("""
-            INSERT INTO marcas(nombre) VALUES (?)
-            ON CONFLICT(nombre) DO UPDATE SET eliminado = false, activo = true
-            WHERE marcas.eliminado = true OR marcas.activo = false
-            """, nombre);
+            INSERT INTO marcas(nombre)
+            SELECT ? WHERE NOT EXISTS (
+                SELECT 1 FROM marcas WHERE lower(trim(nombre)) = lower(trim(?)))
+            """, nombre, nombre);
     }
 
     private void crearModelo(String marca, String nombre, int cc, String tipo) {
-        jdbc.update("INSERT INTO modelos_moto(marca_id,nombre,cilindrada_cc,tipo) SELECT id,?,?,? FROM marcas WHERE nombre=? AND eliminado=false ON CONFLICT(marca_id,nombre) DO UPDATE SET cilindrada_cc=EXCLUDED.cilindrada_cc,tipo=EXCLUDED.tipo,eliminado=false", nombre, cc, tipo, marca);
+        jdbc.update("INSERT INTO modelos_moto(marca_id,nombre,cilindrada_cc,tipo) SELECT id,?,?,? FROM marcas WHERE nombre=? AND eliminado=false ON CONFLICT(marca_id,nombre) DO UPDATE SET cilindrada_cc=EXCLUDED.cilindrada_cc,tipo=EXCLUDED.tipo", nombre, cc, tipo, marca);
     }
 
     private void crearProducto(ProductoRef p) {
