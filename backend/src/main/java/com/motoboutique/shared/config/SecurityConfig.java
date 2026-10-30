@@ -15,6 +15,7 @@ import org.springframework.security.web.authentication.logout.HttpStatusReturnin
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -47,12 +48,23 @@ public class SecurityConfig {
     public static final String RUTA_LOGOUT = "/api/auth/logout";
 
     @Bean
-    public SecurityFilterChain filtroDeSeguridad(HttpSecurity http) throws Exception {
+    public CookieCsrfTokenRepository csrfTokenRepository(
+            @Value("${server.servlet.session.cookie.secure:false}") boolean cookiesSeguras) {
+        CookieCsrfTokenRepository repositorio = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        if (cookiesSeguras) {
+            repositorio.setCookieCustomizer(cookie -> cookie.sameSite("None").secure(true));
+        }
+        return repositorio;
+    }
+
+    @Bean
+    public SecurityFilterChain filtroDeSeguridad(
+            HttpSecurity http, CsrfTokenRepository csrfTokenRepository) throws Exception {
         http
                 .cors(Customizer.withDefaults())
                 .httpBasic(basic -> basic.disable())
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRepository(csrfTokenRepository)
                         // Manejador sin ofuscación (BREACH): el frontend lee el valor de la cookie
                         // y lo reenvía tal cual en la cabecera.
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
