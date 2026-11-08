@@ -14,12 +14,20 @@ const MovimientosPage = lazy(() => import('./features/inventario/MovimientosPage
   .then((module) => ({ default: module.MovimientosPage })))
 const MovimientoFormPage = lazy(() => import('./features/inventario/MovimientoFormPage')
   .then((module) => ({ default: module.MovimientoFormPage })))
+const TransferenciasPage = lazy(() => import('./features/inventario/TransferenciasPage')
+  .then((module) => ({ default: module.TransferenciasPage })))
+const ConteoFisicoPage = lazy(() => import('./features/inventario/ConteoFisicoPage')
+  .then((module) => ({ default: module.ConteoFisicoPage })))
+const AjustesPage = lazy(() => import('./features/inventario/AjustesPage')
+  .then((module) => ({ default: module.AjustesPage })))
 const ProductosPage = lazy(() => import('./features/catalogo/ProductosPage')
   .then((module) => ({ default: module.ProductosPage })))
 const MotocicletasPage = lazy(() => import('./features/catalogo/MotocicletasPage')
   .then((module) => ({ default: module.MotocicletasPage })))
 const ImportacionPage = lazy(() => import('./features/catalogo/ImportacionPage')
   .then((module) => ({ default: module.ImportacionPage })))
+const ComprasPage = lazy(() => import('./features/compras/ComprasPage')
+  .then((module) => ({ default: module.ComprasPage })))
 const StockPage = lazy(() => import('./features/inventario/StockPage')
   .then((module) => ({ default: module.StockPage })))
 
@@ -33,6 +41,8 @@ const RoleMatrix = lazy(() => import('./features/seguridad/RoleMatrix')
   .then((modulo) => ({ default: modulo.RoleMatrix })))
 const ConfiguracionEmpresaForm = lazy(() => import('./features/configuracion/ConfiguracionEmpresaForm')
   .then((modulo) => ({ default: modulo.ConfiguracionEmpresaForm })))
+const AprobacionesPage = lazy(() => import('./features/seguridad/AprobacionesPage')
+  .then((modulo) => ({ default: modulo.AprobacionesPage })))
 const ValorizacionPage = lazy(() => import('./features/finanzas/ValorizacionPage')
   .then((modulo) => ({ default: modulo.ValorizacionPage })))
 const KardexPage = lazy(() => import('./features/finanzas/KardexPage')
@@ -79,15 +89,20 @@ function RutaContenido({ path }: { path: string }) {
   if (path === '/admin/usuarios') return <UsuariosPage />
   if (path === '/admin/roles') return <RoleMatrix />
   if (path === '/admin/configuracion') return <ConfiguracionEmpresaForm />
+  if (path === '/admin/aprobaciones') return <AprobacionesPage />
   if (path === '/finanzas/valorizacion') return <ValorizacionPage />
   if (path === '/finanzas/kardex') return <KardexPage />
   if (path === '/finanzas/reportes') return <ReportesPage />
   if (path === '/almacen/movimientos') return <MovimientosPage />
   if (path === '/almacen/entradas') return <MovimientoFormPage tipo="entrada" />
   if (path === '/almacen/salidas') return <MovimientoFormPage tipo="salida" />
+  if (path === '/almacen/transferencias') return <TransferenciasPage />
+  if (path === '/almacen/conteo-fisico') return <ConteoFisicoPage />
+  if (path === '/almacen/ajustes') return <AjustesPage />
   if (path === '/catalogo/productos') return <ProductosPage />
   if (path === '/catalogo/motos') return <MotocicletasPage />
   if (path === '/catalogo/importacion') return <ImportacionPage />
+  if (path.startsWith('/compras/')) return <ComprasPage />
   if (path === '/consulta/catalogo') return <ProductosPage />
   if (path === '/consulta/compatibilidades') return <MotocicletasPage />
   if (path === '/consulta/stock') return <StockPage />

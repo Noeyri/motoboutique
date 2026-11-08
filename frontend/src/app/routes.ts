@@ -11,24 +11,28 @@ export interface RutaNavegacion {
   elemento?: ReactNode
 }
 
-// Secciones ocultas por ahora (el código de sus pantallas y el backend se conservan):
-// Aprobaciones, Transferencias, Conteo físico, Ajustes, Proveedores, Órdenes y Recepciones.
-// Para volver a activar una, agrega su entrada aquí, su pantalla en App.tsx
-// (importación y rama de RutaContenido) y, si aplica, su panel en DashboardPage.tsx.
 export const rutas: RutaNavegacion[] = [
   { label: 'Resumen general', path: '/admin/dashboard', permiso: 'USUARIO_VER', grupo: 'ADMINISTRACIÓN' },
   { label: 'Usuarios', path: '/admin/usuarios', permiso: 'USUARIO_VER', grupo: 'ADMINISTRACIÓN' },
   { label: 'Roles y permisos', path: '/admin/roles', permiso: 'ROL_VER', grupo: 'ADMINISTRACIÓN' },
   { label: 'Configuración', path: '/admin/configuracion', permiso: 'CONFIG_VER', grupo: 'ADMINISTRACIÓN' },
+  { label: 'Aprobaciones', path: '/admin/aprobaciones', permiso: 'AJUSTE_APROBAR', grupo: 'ADMINISTRACIÓN' },
 
   { label: 'Resumen de almacén', path: '/almacen/dashboard', permiso: 'INVENTARIO_VER', grupo: 'ALMACÉN' },
   { label: 'Movimientos', path: '/almacen/movimientos', permiso: 'INVENTARIO_VER', grupo: 'ALMACÉN' },
   { label: 'Entradas', path: '/almacen/entradas', permiso: 'INVENTARIO_EDITAR', grupo: 'ALMACÉN' },
   { label: 'Salidas', path: '/almacen/salidas', permiso: 'INVENTARIO_EDITAR', grupo: 'ALMACÉN' },
+  { label: 'Transferencias', path: '/almacen/transferencias', permiso: 'TRANSFERENCIA_EDITAR', grupo: 'ALMACÉN' },
+  { label: 'Conteo físico', path: '/almacen/conteo-fisico', permiso: 'CONTEO_EDITAR', grupo: 'ALMACÉN' },
+  { label: 'Ajustes', path: '/almacen/ajustes', permiso: 'AJUSTE_SOLICITAR', grupo: 'ALMACÉN' },
 
   { label: 'Productos', path: '/catalogo/productos', permiso: 'PRODUCTO_VER', grupo: 'CATÁLOGO' },
   { label: 'Motocicletas', path: '/catalogo/motos', permiso: 'PRODUCTO_VER', grupo: 'CATÁLOGO' },
   { label: 'Importación', path: '/catalogo/importacion', permiso: 'IMPORTAR_CATALOGO', grupo: 'CATÁLOGO' },
+
+  { label: 'Proveedores', path: '/compras/proveedores', permiso: 'COMPRA_VER', grupo: 'COMPRAS' },
+  { label: 'Órdenes', path: '/compras/ordenes', permiso: 'COMPRA_VER', grupo: 'COMPRAS' },
+  { label: 'Recepciones', path: '/compras/recepciones', permiso: 'COMPRA_VER', grupo: 'COMPRAS' },
 
   { label: 'Resumen financiero', path: '/finanzas/dashboard', permiso: 'REPORTE_VER', grupo: 'FINANZAS' },
   { label: 'Valorización', path: '/finanzas/valorizacion', permiso: 'REPORTE_VER', grupo: 'FINANZAS' },
