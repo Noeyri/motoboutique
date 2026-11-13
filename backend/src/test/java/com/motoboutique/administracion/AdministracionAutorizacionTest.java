@@ -5,12 +5,14 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 
 import com.motoboutique.inventario.service.AdministracionInventarioService;
+import com.motoboutique.inventario.domain.Almacen;
 import com.motoboutique.compras.domain.ConfiguracionEmpresa;
 import com.motoboutique.compras.repository.ConfiguracionEmpresaRepository;
 import com.motoboutique.seguridad.service.RecuperacionPasswordService;
@@ -154,14 +156,20 @@ class AdministracionAutorizacionTest {
     @Test
     void configuracionRequierePermisoDeLectura() throws Exception {
         ConfiguracionEmpresa config = new ConfiguracionEmpresa();
+        Almacen almacen = new Almacen();
+        almacen.setNombre("Principal");
         config.setId((short) 1);
         config.setMoneda("PEN");
         config.setIgv(new BigDecimal("18.00"));
         config.setStockMinimoDefault(BigDecimal.ZERO);
+        config.setAlmacenDefecto(almacen);
         when(configuracionRepository.findById((short) 1)).thenReturn(Optional.of(config));
         mockMvc.perform(get("/api/configuracion")
                         .with(user("admin-config").roles("ADMIN")))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.almacenDefecto").value("Principal"));
+        mockMvc.perform(get("/api/configuracion"))
+                .andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/configuracion")
                         .with(user("consulta").roles("CONSULTA")))
                 .andExpect(status().isForbidden());
